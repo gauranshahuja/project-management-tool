@@ -3,25 +3,28 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
+// ✅ Import routes
+const userRoutes = require('./routes/userRoutes');
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Simple test routes
+// 🔹 Basic test routes
 app.get('/', (req, res) => res.send('API Running...'));
+app.get('/api/test', (req, res) => res.json({ message: 'Hello from backend!' }));
 
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Hello from backend!' });
-});
+// 🔐 User auth routes
+app.use('/api/users', userRoutes);
 
-// Connect to MongoDB without deprecated options
 const PORT = process.env.PORT || 5000;
 
+// 🔌 MongoDB + Server
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("✅ MongoDB Connected");
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
   } catch (error) {
     console.error("❌ MongoDB connection error:", error.message);
     process.exit(1);
