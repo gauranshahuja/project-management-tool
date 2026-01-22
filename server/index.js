@@ -6,6 +6,7 @@ require('dotenv').config();
 // ✅ Import routes
 const userRoutes = require('./routes/userRoutes');
 const projectRoutes = require('./routes/projectRoutes'); 
+const taskRoutes = require('./routes/taskRoutes');
 
 const app = express();
 app.use(cors());
@@ -19,7 +20,10 @@ app.get('/api/test', (req, res) => res.json({ message: 'Hello from backend!' }))
 app.use('/api/users', userRoutes);
 
 // 📁 Project routes
-app.use('/api/projects', projectRoutes); 
+app.use('/api/projects', projectRoutes);
+
+// 📋 Task routes (mounted cleanly!)
+app.use('/api/tasks', taskRoutes);
 
 const PORT = process.env.PORT || 5000;
 

@@ -1,21 +1,22 @@
-// client/src/App.jsx
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { Routes, Route, Navigate } from "react-router-dom";
+import Register from "./pages/Register";
+import Login from "./pages/Login";
+import Home from "./pages/Home";
 
 function App() {
-  const [message, setMessage] = useState('Loading...');
-
-  useEffect(() => {
-    axios.get('http://localhost:5000/api/test')
-      .then(res => setMessage(res.data.message))
-      .catch(err => setMessage('Error: ' + err.message));
-  }, []);
-
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold">Project Management Tool</h1>
-      <p className="mt-2">Backend says: {message}</p>
-    </div>
+    <Routes>
+      {/* Redirect base URL to /login */}
+      <Route path="/" element={<Navigate to="/login" />} />
+
+      {/* Main routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/home" element={<Home />} />
+
+      {/* Optional: catch-all for 404 */}
+      <Route path="*" element={<h1>404 - Page Not Found</h1>} />
+    </Routes>
   );
 }
 
