@@ -1,4 +1,4 @@
-const Project = require('../models/Project');
+const Project = require('../models/project.js');
 
 // @desc    Get all projects for the logged-in user
 exports.getProjects = async (req, res) => {
