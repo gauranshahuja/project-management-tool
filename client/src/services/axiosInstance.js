@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:5000/api", // Backend base URL
+  baseURL: "https://project-management-tool-9yl1.onrender.com/api", // ✅ Updated to live backend
   headers: {
     "Content-Type": "application/json",
   },
