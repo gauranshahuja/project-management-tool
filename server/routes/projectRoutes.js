@@ -6,7 +6,7 @@ const {
   updateProject,
   deleteProject,
 } = require('../controllers/projectController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware.js');
 
 // All routes are protected
 router.route('/')
