@@ -18,7 +18,7 @@ router.route('/:id')
   .delete(protect, deleteProject);
 
   // GET /api/projects
-router.get("/", authMiddleware, async (req, res) => {
+router.get("/", protect, async (req, res) => {
   try {
     const projects = await Project.find({ createdBy: req.user.id });
     res.json(projects);
