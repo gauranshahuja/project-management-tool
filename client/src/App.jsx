@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
-import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import CreateProject from "./pages/CreateProject";
 
@@ -14,7 +13,6 @@ function App() {
       {/* Main routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/home" element={<Home />} />
       <Route path="/dashboard" element={<Dashboard />} /> 
       <Route path="/create-project" element={<CreateProject />} />
       
