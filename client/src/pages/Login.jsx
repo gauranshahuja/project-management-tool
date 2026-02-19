@@ -22,8 +22,8 @@ const handleSubmit = async (e) => {
     localStorage.setItem("token", res.data.token);
     localStorage.setItem("user", JSON.stringify(res.data.user));
 
-    // ✅ Navigate to home page
-    navigate("/home");
+    // ✅ Navigate to Dashboard page
+    navigate("/Dashboard");
   } catch (err) {
     setError(err.response?.data?.message || "Login failed");
   }
