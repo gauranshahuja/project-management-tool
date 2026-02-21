@@ -8,7 +8,7 @@ function App() {
   return (
     <Routes>
       {/* Redirect base URL to /login */}
-      <Route path="/" element={<Navigate to="/login" />} />
+      <Route path="/" element={<Navigate to="/LandingPage" />} />
 
       {/* Main routes */}
       <Route path="/login" element={<Login />} />
