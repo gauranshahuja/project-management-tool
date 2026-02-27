@@ -3,6 +3,7 @@ import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import CreateProject from "./pages/CreateProject";
+import LandingPage from "./pages/LandingPage";
 
 function App() {
   return (
