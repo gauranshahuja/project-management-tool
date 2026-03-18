@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import Lottie from "lottie-react";
+import myAnimation from "../assets/animations/project-animation.json";
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -41,13 +43,9 @@ export default function LandingPage() {
           </p>
         </div>
 
-        {/* Right: Placeholder or animation removed */}
+        {/* Right: Lottie Animation */}
         <div className="w-full lg:w-1/2 flex justify-center items-center py-10">
-          <img
-            src="https://lottie.host/01a53e0d-3c0e-4085-b504-ec5f2a407c7e/nkxUt6WhOb.json"
-            alt="Animation"
-            className="w-3/4 max-w-md"
-          />
+          <Lottie animationData={myAnimation} className="w-3/4 max-w-md" />
         </div>
       </div>
 
