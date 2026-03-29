@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import lottie from "lottie-web";
-import animationData from "../../assets/animations/project-animation.json";
+import animationData from "../assets/animations/project-animation.json";
 
 const testimonials = [
   {
