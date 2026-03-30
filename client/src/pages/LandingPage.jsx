@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import lottie from "lottie-web";
+import AOS from "aos";
+import "aos/dist/aos.css";
 import animationData from "../assets/animations/project-animation.json";
 
 const testimonials = [
@@ -32,12 +34,20 @@ export default function LandingPage() {
         animationData,
       });
     }
+
+    AOS.init({
+      duration: 800,
+      once: true,
+    });
   }, []);
 
   return (
     <div className="font-sans text-gray-800 bg-white">
       {/* Hero */}
-      <section className="h-screen flex flex-col justify-center items-center text-center px-4 relative">
+      <section
+        className="h-screen flex flex-col justify-center items-center text-center px-4 relative"
+        data-aos="fade-up"
+      >
         <h1 className="text-4xl md:text-6xl font-bold mb-4">
           Project Management Tool
         </h1>
@@ -67,7 +77,9 @@ export default function LandingPage() {
       {/* Features Section */}
       <section id="features" className="py-20 bg-gray-100">
         <div className="max-w-6xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-12">Key Features</h2>
+          <h2 className="text-3xl font-bold mb-12" data-aos="fade-up">
+            Key Features
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
             {[
               {
@@ -86,6 +98,8 @@ export default function LandingPage() {
               <div
                 key={idx}
                 className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition transform hover:-translate-y-1"
+                data-aos="zoom-in"
+                data-aos-delay={idx * 100}
               >
                 <h3 className="text-xl font-semibold mb-2">{f.title}</h3>
                 <p className="text-gray-600">{f.desc}</p>
@@ -98,12 +112,16 @@ export default function LandingPage() {
       {/* Testimonials */}
       <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-12">What Our Users Say</h2>
+          <h2 className="text-3xl font-bold mb-12" data-aos="fade-up">
+            What Our Users Say
+          </h2>
           <div className="flex overflow-x-auto gap-6 snap-x snap-mandatory">
             {testimonials.map((t, idx) => (
               <div
                 key={idx}
                 className="snap-center min-w-[300px] bg-gray-100 p-6 rounded-2xl shadow text-left"
+                data-aos="fade-right"
+                data-aos-delay={idx * 200}
               >
                 <p className="italic text-gray-700 mb-4">“{t.text}”</p>
                 <h4 className="font-semibold">{t.name}</h4>
@@ -115,7 +133,10 @@ export default function LandingPage() {
       </section>
 
       {/* Call to Action */}
-      <section className="py-16 bg-blue-600 text-white text-center">
+      <section
+        className="py-16 bg-blue-600 text-white text-center"
+        data-aos="fade-up"
+      >
         <h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
         <p className="mb-6">Sign up today and supercharge your productivity!</p>
         <a
