@@ -1,151 +1,156 @@
-import { useEffect } from "react";
-import lottie from "lottie-web";
+import { useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import Lottie from "lottie-react";
 import animationData from "../assets/animations/project-animation.json";
 
-const testimonials = [
-  {
-    name: "Anjali Verma",
-    role: "Product Manager",
-    text: "This tool changed how our team collaborates. It's intuitive and powerful!",
-  },
-  {
-    name: "Ravi Kumar",
-    role: "Team Lead",
-    text: "Project Management Tool helped us hit every deadline. A must-have for startups.",
-  },
-  {
-    name: "Sara Nair",
-    role: "Developer",
-    text: "Beautiful UI, smooth workflow, and awesome features. Highly recommended!",
-  },
-];
+import { FaRocket, FaLock, FaUsers } from "react-icons/fa";
 
-export default function LandingPage() {
+import FeatureCard from "../components/FeatureCard";
+import Testimonials from "../components/Testimonials";
+import Newsletter from "../components/Newsletter";
+import ContactForm from "../components/ContactForm";
+import DarkModeToggle from "../components/DarkModeToggle";
+import Navbar from "../components/Navbar";
+
+function LandingPage() {
+  const testimonialRef = useRef(null);
+  const newsletterRef = useRef(null);
+  const contactRef = useRef(null);
+
   useEffect(() => {
-    const container = document.getElementById("lottie-animation");
-    if (container) {
-      lottie.loadAnimation({
-        container,
-        renderer: "svg",
-        loop: true,
-        autoplay: true,
-        animationData,
-      });
-    }
-
-    AOS.init({
-      duration: 800,
-      once: true,
-    });
+    AOS.init({ duration: 1000 });
   }, []);
 
+  const scrollTo = (ref) => {
+    ref?.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const features = [
+    {
+      icon: <FaRocket className="text-indigo-600 dark:text-indigo-400" size={32} />,
+      title: "Fast Launch",
+      description: "Get your projects up and running in no time.",
+    },
+    {
+      icon: <FaLock className="text-indigo-600 dark:text-indigo-400" size={32} />,
+      title: "Secure Access",
+      description: "Your data is protected with industry-standard encryption.",
+    },
+    {
+      icon: <FaUsers className="text-indigo-600 dark:text-indigo-400" size={32} />,
+      title: "Team Collaboration",
+      description: "Manage teams and assign tasks efficiently.",
+    },
+  ];
+
   return (
-    <div className="font-sans text-gray-800 bg-white">
-      {/* Hero */}
-      <section
-        className="h-screen flex flex-col justify-center items-center text-center px-4 relative"
-        data-aos="fade-up"
-      >
-        <h1 className="text-4xl md:text-6xl font-bold mb-4">
-          Project Management Tool
-        </h1>
-        <p className="text-lg md:text-xl mb-6 max-w-xl">
-          Organize, Collaborate & Deliver Projects Faster with Ease.
-        </p>
-        <a
-          href="#features"
-          className="bg-blue-600 text-white px-6 py-3 rounded-full text-lg transition hover:bg-blue-700"
-        >
-          Explore Features
-        </a>
+    <div className="relative min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-gray-900 dark:to-gray-800 text-gray-800 dark:text-white overflow-x-hidden">
+      <Navbar
+        scrollToTestimonial={() => scrollTo(testimonialRef)}
+        scrollToNewsletter={() => scrollTo(newsletterRef)}
+        scrollToContact={() => scrollTo(contactRef)}
+      />
 
-        {/* Lottie animation */}
-        <div
-          id="lottie-animation"
-          className="w-full max-w-md mt-10"
-          aria-label="Lottie animation"
-        ></div>
+      <DarkModeToggle />
 
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-6 animate-bounce text-gray-500">
-          <span>&#8595;</span>
+      {/* Animated Blobs */}
+      <div className="absolute -top-20 -left-20 w-[400px] h-[400px] bg-purple-300 dark:bg-purple-700 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse z-0"></div>
+      <div className="absolute top-10 right-10 w-[300px] h-[300px] bg-indigo-300 dark:bg-indigo-700 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-ping z-0"></div>
+
+      {/* Hero Section with Lottie */}
+      <section className="relative z-10 flex flex-col items-center text-center px-6 pt-24">
+        <div className="w-60 md:w-80" data-aos="fade-up">
+          <Lottie animationData={animationData} loop />
         </div>
+        <motion.h1
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-4xl md:text-6xl font-extrabold mb-4"
+        >
+          Manage Projects Effortlessly
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="text-lg mb-6 max-w-xl"
+        >
+          Streamline your team’s workflow and stay productive.
+        </motion.p>
+
+        {/* CTA Buttons */}
+        <motion.div
+          whileHover={{ scale: 1.1 }}
+          className="flex flex-wrap gap-4 justify-center"
+        >
+          <a
+            href="/register"
+            className="bg-indigo-600 text-white px-6 py-3 rounded-full font-semibold shadow hover:bg-indigo-700 transition"
+          >
+            Create Account
+          </a>
+          <a
+            href="/login"
+            className="border border-indigo-600 text-indigo-600 px-6 py-3 rounded-full font-semibold hover:bg-indigo-50 dark:hover:bg-gray-700 transition"
+          >
+            Login
+          </a>
+        </motion.div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-gray-100">
-        <div className="max-w-6xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-12" data-aos="fade-up">
-            Key Features
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-            {[
-              {
-                title: "Team Collaboration",
-                desc: "Invite your team and assign roles to streamline your projects.",
-              },
-              {
-                title: "Task Management",
-                desc: "Create, track, and prioritize tasks easily with drag-and-drop.",
-              },
-              {
-                title: "Analytics Dashboard",
-                desc: "Visualize project progress and productivity stats in real-time.",
-              },
-            ].map((f, idx) => (
-              <div
-                key={idx}
-                className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition transform hover:-translate-y-1"
-                data-aos="zoom-in"
-                data-aos-delay={idx * 100}
-              >
-                <h3 className="text-xl font-semibold mb-2">{f.title}</h3>
-                <p className="text-gray-600">{f.desc}</p>
-              </div>
-            ))}
-          </div>
+      <section className="py-16 px-6 z-10 relative">
+        <h2 className="text-3xl font-bold text-center mb-10" data-aos="fade-up">
+          Key Features
+        </h2>
+        <div className="grid gap-6 md:grid-cols-3 max-w-6xl mx-auto">
+          {features.map((feature, i) => (
+            <motion.div
+              key={i}
+              whileHover={{ scale: 1.05 }}
+              className="transition duration-300"
+              data-aos="fade-up"
+              data-aos-delay={i * 100}
+            >
+              <FeatureCard {...feature} />
+            </motion.div>
+          ))}
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-20 bg-white">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-12" data-aos="fade-up">
-            What Our Users Say
-          </h2>
-          <div className="flex overflow-x-auto gap-6 snap-x snap-mandatory">
-            {testimonials.map((t, idx) => (
-              <div
-                key={idx}
-                className="snap-center min-w-[300px] bg-gray-100 p-6 rounded-2xl shadow text-left"
-                data-aos="fade-right"
-                data-aos-delay={idx * 200}
-              >
-                <p className="italic text-gray-700 mb-4">“{t.text}”</p>
-                <h4 className="font-semibold">{t.name}</h4>
-                <p className="text-sm text-gray-500">{t.role}</p>
-              </div>
-            ))}
-          </div>
+      {/* Testimonials Section */}
+      <section ref={testimonialRef} className="py-20 bg-white dark:bg-gray-900 px-4">
+        <div data-aos="fade-up">
+          <Testimonials />
         </div>
       </section>
 
-      {/* Call to Action */}
-      <section
-        className="py-16 bg-blue-600 text-white text-center"
-        data-aos="fade-up"
+      {/* Newsletter Section */}
+      <section ref={newsletterRef} className="py-20 px-4 bg-indigo-50 dark:bg-indigo-900">
+        <div data-aos="fade-up">
+          <Newsletter />
+        </div>
+      </section>
+
+      {/* Contact Form */}
+      <section ref={contactRef} className="py-20 px-4 bg-gray-100 dark:bg-gray-800">
+        <div data-aos="fade-up">
+          <ContactForm />
+        </div>
+      </section>
+
+      {/* Floating CTA Button */}
+      <a
+        href="/register"
+        className="fixed bottom-6 right-6 z-50 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-full shadow-lg transition duration-300"
       >
-        <h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
-        <p className="mb-6">Sign up today and supercharge your productivity!</p>
-        <a
-          href="/register"
-          className="inline-block bg-white text-blue-600 px-6 py-3 rounded-full font-medium text-lg transition hover:bg-gray-100"
-        >
-          Create Account
-        </a>
-      </section>
+        Let’s Chat 💬
+      </a>
     </div>
   );
 }
+
+export default LandingPage;
