@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
+import { FaQuoteLeft } from "react-icons/fa";
 
 const testimonials = [
   {
-    name: "Alice",
-    comment: "This tool transformed the way our team works!",
+    name: "Aman Singh",
+    feedback: "This tool has completely changed how we manage our projects. Love it!",
   },
   {
-    name: "Bob",
-    comment: "Simple, clean, and powerful.",
+    name: "Priya Desai",
+    feedback: "Simple, fast, and efficient. My team is more productive than ever.",
   },
   {
-    name: "Clara",
-    comment: "Helped me stay organized and productive.",
+    name: "Ravi Kumar",
+    feedback: "Beautiful UI and smooth experience. Highly recommend!",
   },
 ];
 
@@ -19,19 +20,22 @@ function Testimonials() {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => setIndex((i) => (i + 1) % testimonials.length), 3000);
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % testimonials.length);
+    }, 5000);
     return () => clearInterval(timer);
   }, []);
 
-  const { name, comment } = testimonials[index];
+  const testimonial = testimonials[index];
 
   return (
-    <section className="bg-indigo-100 dark:bg-gray-800 text-center py-16 px-4">
-      <h2 className="text-3xl font-bold text-indigo-600 dark:text-white mb-8">What Users Say</h2>
-      <blockquote className="text-xl italic text-gray-700 dark:text-gray-200 max-w-2xl mx-auto">
-        "{comment}"
-      </blockquote>
-      <p className="mt-4 font-semibold text-indigo-600 dark:text-indigo-300">- {name}</p>
+    <section className="py-16 px-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-white relative z-10">
+      <h2 className="text-3xl font-bold text-center mb-10">What Our Users Say</h2>
+      <div className="max-w-2xl mx-auto text-center transition-all duration-700 ease-in-out">
+        <FaQuoteLeft className="mx-auto text-indigo-500 text-4xl mb-4" />
+        <p className="text-xl italic mb-4">"{testimonial.feedback}"</p>
+        <p className="font-semibold">- {testimonial.name}</p>
+      </div>
     </section>
   );
 }
