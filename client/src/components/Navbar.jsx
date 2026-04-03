@@ -1,71 +1,122 @@
-// src/components/Navbar.jsx
+// src/pages/LandingPage.jsx
 
-import { useState } from "react";
-import { Link } from "react-scroll";
-import { FaBars, FaTimes } from "react-icons/fa";
-import DarkModeToggle from "./DarkModeToggle";
+import { useEffect } from "react";
+import Navbar from "../components/Navbar";
+import FeatureSection from "../components/FeatureSection";
+import ContactForm from "../components/ContactForm";
+import Newsletter from "../components/Newsletter";
+import TestimonialCard from "../components/TestimonialCard";
+import { motion } from "framer-motion";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import { FaArrowUp } from "react-icons/fa";
 
-const Navbar = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  const toggleMenu = () => setMenuOpen(!menuOpen);
-
-  const navLinks = [
-    { name: "Features", to: "features" },
-    { name: "Testimonials", to: "testimonials" },
-    { name: "Newsletter", to: "newsletter" },
-    { name: "Contact", to: "contact" },
-  ];
+const LandingPage = () => {
+  useEffect(() => {
+    AOS.init({ duration: 1000 });
+  }, []);
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-white/70 dark:bg-gray-900/70 backdrop-blur z-50 shadow">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-indigo-600 dark:text-white">
-          ProjectHub
-        </h1>
+    <div className="bg-gradient-to-br from-white to-indigo-50 dark:from-gray-900 dark:to-gray-800 text-gray-900 dark:text-white scroll-smooth">
+      <Navbar />
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex gap-6 items-center">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              to={link.to}
-              smooth={true}
-              duration={500}
-              className="cursor-pointer text-gray-800 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition"
-            >
-              {link.name}
-            </Link>
-          ))}
-          <DarkModeToggle />
-        </nav>
+      {/* Hero Section */}
+      <section className="min-h-screen flex flex-col justify-center items-center text-center px-6 pt-32">
+        <motion.h1
+          initial={{ opacity: 0, y: -40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-4xl md:text-6xl font-bold mb-4"
+        >
+          Empower Your Projects
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="text-lg max-w-xl"
+        >
+          Manage tasks, teams, and timelines all in one place with ProjectHub.
+        </motion.p>
+        <motion.a
+          href="#features"
+          whileHover={{ scale: 1.05 }}
+          className="mt-6 inline-block px-6 py-3 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 transition"
+        >
+          Get Started
+        </motion.a>
+      </section>
 
-        {/* Mobile Nav Toggle */}
-        <button onClick={toggleMenu} className="md:hidden text-2xl text-gray-800 dark:text-white">
-          {menuOpen ? <FaTimes /> : <FaBars />}
-        </button>
-      </div>
+      {/* Blob Background */}
+      <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-300 opacity-20 rounded-full filter blur-3xl z-0 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-72 h-72 bg-pink-300 opacity-20 rounded-full filter blur-3xl z-0 pointer-events-none" />
 
-      {/* Mobile Menu */}
-      {menuOpen && (
-        <div className="md:hidden px-6 py-4 space-y-4 bg-white dark:bg-gray-900">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              to={link.to}
-              smooth={true}
-              duration={500}
-              onClick={toggleMenu}
-              className="block text-gray-800 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition"
-            >
-              {link.name}
-            </Link>
-          ))}
-          <DarkModeToggle />
+      {/* Features */}
+      <section id="features" className="relative z-10 py-20 px-6 bg-white dark:bg-gray-900">
+        <h2 className="text-3xl font-bold text-center mb-12" data-aos="fade-up">
+          Powerful Features
+        </h2>
+        <FeatureSection />
+      </section>
+
+      {/* Testimonials */}
+      <section
+        id="testimonials"
+        className="relative z-10 py-20 px-6 bg-gray-50 dark:bg-gray-800"
+      >
+        <h2 className="text-3xl font-bold text-center mb-12" data-aos="fade-up">
+          What Our Users Say
+        </h2>
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
+          <TestimonialCard
+            name="Aarav Sharma"
+            text="ProjectHub helped us streamline our workflow and collaborate effectively."
+            role="Product Manager"
+          />
+          <TestimonialCard
+            name="Sana Kapoor"
+            text="I love the clean UI and how easy it is to track project progress!"
+            role="Designer"
+          />
         </div>
-      )}
-    </header>
+      </section>
+
+      {/* Newsletter */}
+      <section
+        id="newsletter"
+        className="relative z-10 py-20 px-6 bg-indigo-50 dark:bg-gray-700"
+      >
+        <h2 className="text-3xl font-bold text-center mb-8" data-aos="fade-up">
+          Stay in the Loop
+        </h2>
+        <Newsletter />
+      </section>
+
+      {/* Contact */}
+      <section
+        id="contact"
+        className="relative z-10 py-20 px-6 bg-white dark:bg-gray-900"
+      >
+        <h2 className="text-3xl font-bold text-center mb-8" data-aos="fade-up">
+          Let’s Talk!
+        </h2>
+        <ContactForm />
+      </section>
+
+      {/* Sticky CTA Button */}
+      <a
+        href="#contact"
+        className="fixed bottom-6 right-6 z-50 bg-indigo-600 text-white p-4 rounded-full shadow-lg hover:bg-indigo-700 transition"
+      >
+        <FaArrowUp />
+      </a>
+
+      {/* Footer */}
+      <footer className="bg-gray-100 dark:bg-gray-800 text-center py-4 text-sm text-gray-600 dark:text-gray-300">
+        © {new Date().getFullYear()} ProjectHub. All rights reserved.
+      </footer>
+    </div>
   );
 };
 
-export default Navbar;
+export default LandingPage;
