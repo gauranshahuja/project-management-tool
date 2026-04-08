@@ -1,31 +1,31 @@
 import { useEffect, useState } from "react";
-import { FaSun, FaMoon } from "react-icons/fa";
+import { FaMoon, FaSun } from "react-icons/fa";
 
-function DarkModeToggle() {
-  const [dark, setDark] = useState(
-    localStorage.getItem("theme") === "dark" ||
-      (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches)
-  );
+const DarkModeToggle = () => {
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem("theme") === "dark";
+  });
 
   useEffect(() => {
     const root = window.document.documentElement;
-    if (dark) {
+    if (darkMode) {
       root.classList.add("dark");
       localStorage.setItem("theme", "dark");
     } else {
       root.classList.remove("dark");
       localStorage.setItem("theme", "light");
     }
-  }, [dark]);
+  }, [darkMode]);
 
   return (
     <button
-      onClick={() => setDark(!dark)}
-      className="fixed top-6 right-6 z-50 bg-white dark:bg-gray-900 text-yellow-500 dark:text-gray-300 border border-gray-300 dark:border-gray-600 shadow p-3 rounded-full transition duration-300"
+      onClick={() => setDarkMode(!darkMode)}
+      className="p-2 rounded-full text-xl text-yellow-400 dark:text-white bg-gray-200 dark:bg-gray-700 hover:scale-105 transition-transform"
+      aria-label="Toggle Dark Mode"
     >
-      {dark ? <FaSun /> : <FaMoon />}
+      {darkMode ? <FaSun /> : <FaMoon />}
     </button>
   );
-}
+};
 
 export default DarkModeToggle;
