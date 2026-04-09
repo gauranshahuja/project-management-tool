@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Navbar from "../components/Navbar";
-import FeatureSection from "../components/FeatureCard";
+import FeatureSection from "../components/FeatureSection";
 import ContactForm from "../components/ContactForm";
 import Newsletter from "../components/Newsletter";
 import TestimonialCard from "../components/Testimonials";

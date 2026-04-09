@@ -1,15 +1,16 @@
-import { IconContext } from "react-icons";
+// src/components/FeatureCard.jsx
 
-function FeatureCard({ icon, title, description }) {
+const FeatureCard = ({ icon, title, description, aos }) => {
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow hover:scale-105 transition transform duration-300">
-      <IconContext.Provider value={{ size: "2em", className: "text-indigo-500 mb-4" }}>
-        <div>{icon}</div>
-      </IconContext.Provider>
-      <h3 className="text-xl font-bold mb-2">{title}</h3>
-      <p>{description}</p>
+    <div
+      className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center hover:scale-105 transition-transform"
+      data-aos={aos}
+    >
+      <div className="text-indigo-600 mb-4">{icon}</div>
+      <h3 className="text-xl font-semibold mb-2">{title}</h3>
+      <p className="text-gray-600 dark:text-gray-300">{description}</p>
     </div>
   );
-}
+};
 
 export default FeatureCard;
