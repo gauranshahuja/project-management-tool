@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { FaArrowUp } from "react-icons/fa";
+import { Link } from "react-router-dom";
 
 const LandingPage = () => {
   useEffect(() => {
@@ -18,6 +19,10 @@ const LandingPage = () => {
 
   return (
     <div className="bg-gradient-to-br from-white to-indigo-50 dark:from-gray-900 dark:to-gray-800 text-gray-900 dark:text-white scroll-smooth">
+      
+      {/* Scroll to Top Anchor */}
+      <div id="top" />
+
       <Navbar />
 
       {/* Hero Section */}
@@ -39,7 +44,7 @@ const LandingPage = () => {
           Manage tasks, teams, and timelines all in one place with ProjectHub.
         </motion.p>
         <motion.a
-          href="#features"
+          href="#auth"
           whileHover={{ scale: 1.05 }}
           className="mt-6 inline-block px-6 py-3 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 transition"
         >
@@ -47,11 +52,11 @@ const LandingPage = () => {
         </motion.a>
       </section>
 
-      {/* Blob Background */}
+      {/* Blobs */}
       <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-300 opacity-20 rounded-full filter blur-3xl z-0 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-72 h-72 bg-pink-300 opacity-20 rounded-full filter blur-3xl z-0 pointer-events-none" />
 
-      {/* Features */}
+      {/* Features Section */}
       <section id="features" className="relative z-10 py-20 px-6 bg-white dark:bg-gray-900">
         <h2 className="text-3xl font-bold text-center mb-12" data-aos="fade-up">
           Powerful Features
@@ -59,11 +64,8 @@ const LandingPage = () => {
         <FeatureSection />
       </section>
 
-      {/* Testimonials */}
-      <section
-        id="testimonials"
-        className="relative z-10 py-20 px-6 bg-gray-50 dark:bg-gray-800"
-      >
+      {/* Testimonials Section */}
+      <section id="testimonials" className="relative z-10 py-20 px-6 bg-gray-50 dark:bg-gray-800">
         <h2 className="text-3xl font-bold text-center mb-12" data-aos="fade-up">
           What Our Users Say
         </h2>
@@ -81,31 +83,46 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Newsletter */}
-      <section
-        id="newsletter"
-        className="relative z-10 py-20 px-6 bg-indigo-50 dark:bg-gray-700"
-      >
+      {/* Newsletter Section */}
+      <section id="newsletter" className="relative z-10 py-20 px-6 bg-indigo-50 dark:bg-gray-700">
         <h2 className="text-3xl font-bold text-center mb-8" data-aos="fade-up">
           Stay in the Loop
         </h2>
         <Newsletter />
       </section>
 
-      {/* Contact */}
-      <section
-        id="contact"
-        className="relative z-10 py-20 px-6 bg-white dark:bg-gray-900"
-      >
+      {/* Auth Section (Login/Register) */}
+      <section id="auth" className="relative z-10 py-20 px-6 bg-white dark:bg-gray-900">
+        <h2 className="text-3xl font-bold text-center mb-8" data-aos="fade-up">
+          Ready to Get Started?
+        </h2>
+        <div className="flex justify-center gap-6">
+          <Link
+            to="/login"
+            className="px-6 py-3 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 transition"
+          >
+            Login
+          </Link>
+          <Link
+            to="/register"
+            className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-full shadow-md hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+          >
+            Register
+          </Link>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="relative z-10 py-20 px-6 bg-white dark:bg-gray-900">
         <h2 className="text-3xl font-bold text-center mb-8" data-aos="fade-up">
           Let’s Talk!
         </h2>
         <ContactForm />
       </section>
 
-      {/* Sticky CTA Button */}
+      {/* Scroll to Top Button */}
       <a
-        href="#contact"
+        href="#top"
         className="fixed bottom-6 right-6 z-50 bg-indigo-600 text-white p-4 rounded-full shadow-lg hover:bg-indigo-700 transition"
       >
         <FaArrowUp />
