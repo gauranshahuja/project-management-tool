@@ -11,6 +11,8 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { FaArrowUp } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import Lottie from "lottie-react";
+import animationData from "../assets/animations/project-animation.json"; 
 
 const LandingPage = () => {
   useEffect(() => {
@@ -26,7 +28,7 @@ const LandingPage = () => {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="min-h-screen flex flex-col justify-center items-center text-center px-6 pt-32">
+      <section className="min-h-screen flex flex-col justify-center items-center text-center px-6 pt-32 relative z-10">
         <motion.h1
           initial={{ opacity: 0, y: -40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -39,14 +41,21 @@ const LandingPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="text-lg max-w-xl"
+          className="text-lg max-w-xl mb-6"
         >
           Manage tasks, teams, and timelines all in one place with ProjectHub.
         </motion.p>
+
+        {/* ✅ Lottie Animation (Inserted between heading and button) */}
+        <div className="w-full max-w-lg mb-6">
+          <Lottie animationData={animationData} loop autoplay />
+        </div>
+
+        {/* Get Started Button */}
         <motion.a
           href="#auth"
           whileHover={{ scale: 1.05 }}
-          className="mt-6 inline-block px-6 py-3 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 transition"
+          className="mt-2 inline-block px-6 py-3 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 transition"
         >
           Get Started
         </motion.a>

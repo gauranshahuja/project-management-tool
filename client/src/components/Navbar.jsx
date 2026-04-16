@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Link } from "react-scroll";
+import { Link as RouterLink } from "react-router-dom";
 import { FaBars, FaTimes } from "react-icons/fa";
 import DarkModeToggle from "./DarkModeToggle";
 
@@ -18,12 +19,8 @@ const Navbar = () => {
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
 
-  // Optional: Add scroll effect to change navbar background on scroll
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -43,7 +40,7 @@ const Navbar = () => {
         </h1>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex gap-8 items-center">
+        <nav className="hidden md:flex gap-6 items-center">
           {navLinks.map((link) => (
             <Link
               key={link.name}
@@ -57,6 +54,18 @@ const Navbar = () => {
             </Link>
           ))}
           <DarkModeToggle />
+          <RouterLink
+            to="/login"
+            className="text-gray-800 dark:text-white hover:text-indigo-600 transition"
+          >
+            Login
+          </RouterLink>
+          <RouterLink
+            to="/register"
+            className="ml-2 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
+          >
+            Register
+          </RouterLink>
         </nav>
 
         {/* Mobile Menu Toggle */}
@@ -86,6 +95,20 @@ const Navbar = () => {
             </Link>
           ))}
           <DarkModeToggle />
+          <RouterLink
+            to="/login"
+            onClick={toggleMenu}
+            className="block text-gray-800 dark:text-white hover:text-indigo-600"
+          >
+            Login
+          </RouterLink>
+          <RouterLink
+            to="/register"
+            onClick={toggleMenu}
+            className="block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+          >
+            Register
+          </RouterLink>
         </div>
       )}
     </header>
