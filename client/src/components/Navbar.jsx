@@ -55,16 +55,10 @@ const Navbar = () => {
           ))}
           <DarkModeToggle />
           <RouterLink
-            to="/login"
-            className="text-gray-800 dark:text-white hover:text-indigo-600 transition"
+            to="/auth"
+            className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
           >
-            Login
-          </RouterLink>
-          <RouterLink
-            to="/register"
-            className="ml-2 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
-          >
-            Register
+            Login / Register
           </RouterLink>
         </nav>
 
@@ -96,18 +90,11 @@ const Navbar = () => {
           ))}
           <DarkModeToggle />
           <RouterLink
-            to="/login"
+            to="/auth"
             onClick={toggleMenu}
-            className="block text-gray-800 dark:text-white hover:text-indigo-600"
+            className="block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
           >
-            Login
-          </RouterLink>
-          <RouterLink
-            to="/register"
-            onClick={toggleMenu}
-            className="block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-          >
-            Register
+            Login / Register
           </RouterLink>
         </div>
       )}
