@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Navbar from "../components/Navbar";
+import auth  from "Authpage";
 import FeatureSection from "../components/FeatureSection";
 import ContactForm from "../components/ContactForm";
 import Newsletter from "../components/Newsletter";
@@ -107,13 +108,13 @@ const LandingPage = () => {
         </h2>
         <div className="flex justify-center gap-6">
           <Link
-            to="/login"
+            to="/auth"
             className="px-6 py-3 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 transition"
           >
             Login
           </Link>
           <Link
-            to="/register"
+            to="/auth"
             className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-full shadow-md hover:bg-gray-300 dark:hover:bg-gray-600 transition"
           >
             Register
