@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Navbar from "../components/Navbar";
-import auth  from "./Authpage";
+import auth  from "../Authpage";
 import FeatureSection from "../components/FeatureSection";
 import ContactForm from "../components/ContactForm";
 import Newsletter from "../components/Newsletter";
