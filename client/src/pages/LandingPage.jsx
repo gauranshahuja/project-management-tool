@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import Navbar from "../components/Navbar";
 import FeatureSection from "../components/FeatureSection";
-import TestimonialCard from "../components/TestimonialCard";
+import TestimonialCard from "../components/Testimonials";
 import Newsletter from "../components/Newsletter";
 import ContactForm from "../components/ContactForm";
 import DarkModeToggle from "../components/DarkModeToggle";
