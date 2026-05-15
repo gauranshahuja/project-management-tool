@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
 import { FaArrowUp } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import Lottie from "lottie-react";
-import animationData from "../assets/animation.json";
+import animationData from "../assets/animations/project-animation.json";
 
 const LandingPage = () => {
   useEffect(() => {
