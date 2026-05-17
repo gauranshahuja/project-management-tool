@@ -1,57 +1,33 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Dashboard from "./pages/Dashboard";
 import CreateProject from "./pages/CreateProject";
 import LandingPage from "./pages/LandingPage";
-import AuthPage from "./pages/AuthPage";
 
-// Simulated auth check (replace this with real JWT check)
-const isUserAuthenticated = () => {
-  return !!localStorage.getItem("token");
-};
-
-function App() {
+const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    setIsAuthenticated(isUserAuthenticated());
+    setIsAuthenticated(!!localStorage.getItem("token"));
   }, []);
 
   return (
     <Routes>
-      {/* Public Routes */}
       <Route path="/" element={<LandingPage />} />
-      <Route path="/auth" element={<AuthPage />} />
-
-      {/* Protected Routes */}
       <Route
         path="/dashboard"
-        element={
-          isAuthenticated ? (
-            <Dashboard />
-          ) : (
-            <Navigate to="/auth" replace />
-          )
-        }
+        element={isAuthenticated ? <Dashboard /> : <LandingPage showAuth />}
       />
       <Route
         path="/create-project"
-        element={
-          isAuthenticated ? (
-            <CreateProject />
-          ) : (
-            <Navigate to="/auth" replace />
-          )
-        }
+        element={isAuthenticated ? <CreateProject /> : <LandingPage showAuth />}
       />
-
-      {/* 404 Page */}
       <Route
         path="*"
         element={<h1 className="p-6 text-center">404 - Page Not Found</h1>}
       />
     </Routes>
   );
-}
+};
 
 export default App;
