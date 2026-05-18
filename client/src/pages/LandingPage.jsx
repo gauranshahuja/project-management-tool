@@ -8,31 +8,21 @@ import { motion } from "framer-motion";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { FaArrowUp } from "react-icons/fa";
-import { Link } from "react-router-dom";
 import Lottie from "lottie-react";
 import animationData from "../assets/animations/project-animation.json";
-import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { app } from "../utils/firebase"; 
-
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
+import AuthModal from "../components/AuthModal";
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState("login"); // 'login' or 'register'
 
   useEffect(() => {
     AOS.init({ duration: 1000 });
   }, []);
 
-  const handleGoogleLogin = async () => {
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      localStorage.setItem("token", await user.getIdToken());
-      window.location.href = "/dashboard";
-    } catch (error) {
-      console.error("Google login failed:", error);
-    }
+  const openAuthModal = (mode) => {
+    setAuthMode(mode);
+    setShowAuthModal(true);
   };
 
   return (
@@ -42,10 +32,11 @@ const LandingPage = () => {
         <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm z-40" />
       )}
 
-      {/* Main Page */}
       <div className={`relative z-10 ${showAuthModal ? "pointer-events-none select-none" : ""}`}>
         <div id="top" />
-        <Navbar />
+
+        {/* Navbar with modal trigger */}
+        <Navbar onAuthOpen={openAuthModal} />
 
         {/* Hero Section */}
         <section className="min-h-screen flex flex-col justify-center items-center text-center px-6 pt-32 relative z-10">
@@ -66,13 +57,12 @@ const LandingPage = () => {
             Manage tasks, teams, and timelines all in one place with ProjectHub.
           </motion.p>
 
-          {/* Animation */}
           <div className="w-full max-w-lg mb-6">
             <Lottie animationData={animationData} loop autoplay />
           </div>
 
           <motion.button
-            onClick={() => setShowAuthModal(true)}
+            onClick={() => openAuthModal("login")}
             whileHover={{ scale: 1.05 }}
             className="mt-2 inline-block px-6 py-3 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 transition"
           >
@@ -119,20 +109,20 @@ const LandingPage = () => {
           <Newsletter />
         </section>
 
-        {/* Auth Buttons */}
+        {/* Call to Action */}
         <section id="auth" className="relative z-10 py-20 px-6 bg-white dark:bg-gray-900">
           <h2 className="text-3xl font-bold text-center mb-8" data-aos="fade-up">
             Ready to Get Started?
           </h2>
           <div className="flex justify-center gap-6">
             <button
-              onClick={() => setShowAuthModal(true)}
+              onClick={() => openAuthModal("login")}
               className="px-6 py-3 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 transition"
             >
               Login
             </button>
             <button
-              onClick={() => setShowAuthModal(true)}
+              onClick={() => openAuthModal("register")}
               className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-full shadow-md hover:bg-gray-300 dark:hover:bg-gray-600 transition"
             >
               Register
@@ -162,25 +152,9 @@ const LandingPage = () => {
         </footer>
       </div>
 
-      {/* Modal Auth Popup */}
+      {/* Auth Modal */}
       {showAuthModal && (
-        <div className="fixed inset-0 z-50 flex justify-center items-center">
-          <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-sm w-full text-center relative z-50">
-            <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Sign in with Google</h2>
-            <button
-              onClick={handleGoogleLogin}
-              className="px-6 py-3 bg-red-500 text-white rounded-full shadow-md hover:bg-red-600 transition mb-4"
-            >
-              Continue with Google
-            </button>
-            <button
-              onClick={() => setShowAuthModal(false)}
-              className="mt-2 text-sm text-gray-600 dark:text-gray-300 hover:underline"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
+        <AuthModal mode={authMode} onClose={() => setShowAuthModal(false)} />
       )}
     </div>
   );
