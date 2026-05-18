@@ -1,12 +1,9 @@
-// src/components/Navbar.jsx
-
 import { useState, useEffect } from "react";
 import { Link } from "react-scroll";
-import { Link as RouterLink } from "react-router-dom";
 import { FaBars, FaTimes } from "react-icons/fa";
 import DarkModeToggle from "./DarkModeToggle";
 
-const Navbar = () => {
+const Navbar = ({ onAuthOpen }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -54,12 +51,20 @@ const Navbar = () => {
             </Link>
           ))}
           <DarkModeToggle />
-          <RouterLink
-            to="/auth"
+
+          {/* Auth Buttons */}
+          <button
+            onClick={() => onAuthOpen("login")}
             className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
           >
-            Login / Register
-          </RouterLink>
+            Login
+          </button>
+          <button
+            onClick={() => onAuthOpen("register")}
+            className="ml-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+          >
+            Register
+          </button>
         </nav>
 
         {/* Mobile Menu Toggle */}
@@ -89,13 +94,26 @@ const Navbar = () => {
             </Link>
           ))}
           <DarkModeToggle />
-          <RouterLink
-            to="/auth"
-            onClick={toggleMenu}
-            className="block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
+
+          {/* Auth Buttons */}
+          <button
+            onClick={() => {
+              toggleMenu();
+              onAuthOpen("login");
+            }}
+            className="block w-full px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
           >
-            Login / Register
-          </RouterLink>
+            Login
+          </button>
+          <button
+            onClick={() => {
+              toggleMenu();
+              onAuthOpen("register");
+            }}
+            className="block w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+          >
+            Register
+          </button>
         </div>
       )}
     </header>
