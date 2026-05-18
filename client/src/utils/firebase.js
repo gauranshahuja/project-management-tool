@@ -21,5 +21,5 @@ const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
 // ✅ Export for use in app
-export { auth, provider };
+export { auth, provider, app };
 
