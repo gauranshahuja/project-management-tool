@@ -2,9 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Project Management Tool</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ProjectHub</title>
+    <script>
+      // 🌓 Prevent flicker: apply dark class before CSS loads
+      (function () {
+        const theme = localStorage.getItem("theme");
+        if (theme === "dark") {
+          document.documentElement.classList.add("dark");
+        }
+      })();
+    </script>
   </head>
-  <body>
+  <body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
