@@ -1,15 +1,19 @@
 // src/components/AuthModal.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signInWithPopup, auth, provider } from "../utils/firebase";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 
-const AuthModal = ({ onClose }) => {
+const AuthModal = ({ onClose, mode = "login" }) => {
   const { login } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(mode === "login");
 
-  const toggleMode = () => setIsLogin(!isLogin);
+  useEffect(() => {
+    setIsLogin(mode === "login");
+  }, [mode]);
+
+  const toggleMode = () => setIsLogin((prev) => !prev);
 
   const handleGoogleLogin = async () => {
     try {
@@ -32,20 +36,14 @@ const AuthModal = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex justify-center items-center">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm"
         onClick={onClose}
       />
-
-      {/* Modal */}
       <div className="relative bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-sm w-full z-50 text-center">
-        {/* Title */}
         <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">
           {isLogin ? "Sign in to your account" : "Create your account"}
         </h2>
-
-        {/* Auth Form */}
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
           {!isLogin && (
             <input
@@ -77,7 +75,6 @@ const AuthModal = ({ onClose }) => {
           </button>
         </form>
 
-        {/* Google Auth */}
         <button
           onClick={handleGoogleLogin}
           className="mt-4 w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded transition"
@@ -85,7 +82,6 @@ const AuthModal = ({ onClose }) => {
           Continue with Google
         </button>
 
-        {/* Toggle Auth Mode */}
         <motion.div
           className="text-center mt-4 text-sm text-gray-600 dark:text-gray-300"
           initial={{ opacity: 0 }}
@@ -100,7 +96,6 @@ const AuthModal = ({ onClose }) => {
           </button>
         </motion.div>
 
-        {/* Cancel */}
         <p
           className="mt-4 text-sm text-gray-500 cursor-pointer hover:underline"
           onClick={onClose}

@@ -14,7 +14,7 @@ const Navbar = ({ onAuthOpen }) => {
     { name: "Contact", to: "contact" },
   ];
 
-  const toggleMenu = () => setMenuOpen(!menuOpen);
+  const toggleMenu = () => setMenuOpen((prev) => !prev);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -28,7 +28,7 @@ const Navbar = ({ onAuthOpen }) => {
         isScrolled
           ? "bg-white/80 dark:bg-gray-900/80 shadow"
           : "bg-transparent"
-      } backdrop-blur`}
+      } backdrop-blur-md`}
     >
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
         {/* Logo */}
@@ -42,7 +42,7 @@ const Navbar = ({ onAuthOpen }) => {
             <Link
               key={link.name}
               to={link.to}
-              smooth={true}
+              smooth
               duration={500}
               offset={-80}
               className="cursor-pointer text-gray-800 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition"
@@ -50,9 +50,9 @@ const Navbar = ({ onAuthOpen }) => {
               {link.name}
             </Link>
           ))}
+
           <DarkModeToggle />
 
-          {/* Auth Buttons */}
           <button
             onClick={() => onAuthOpen("login")}
             className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
@@ -71,7 +71,7 @@ const Navbar = ({ onAuthOpen }) => {
         <button
           onClick={toggleMenu}
           className="md:hidden text-2xl text-gray-800 dark:text-white"
-          aria-label="Toggle Menu"
+          aria-label={menuOpen ? "Close Menu" : "Open Menu"}
         >
           {menuOpen ? <FaTimes /> : <FaBars />}
         </button>
@@ -84,7 +84,7 @@ const Navbar = ({ onAuthOpen }) => {
             <Link
               key={link.name}
               to={link.to}
-              smooth={true}
+              smooth
               duration={500}
               offset={-80}
               onClick={toggleMenu}
@@ -93,9 +93,9 @@ const Navbar = ({ onAuthOpen }) => {
               {link.name}
             </Link>
           ))}
+
           <DarkModeToggle />
 
-          {/* Auth Buttons */}
           <button
             onClick={() => {
               toggleMenu();
