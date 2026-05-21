@@ -1,19 +1,21 @@
-// src/components/AuthModal.jsx
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { signInWithPopup, auth, provider } from "../utils/firebase";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
+import { MoonIcon, SunIcon } from "@heroicons/react/24/solid";
 import { motion } from "framer-motion";
 
 const AuthModal = ({ onClose, mode = "login" }) => {
   const { login } = useAuth();
   const [isLogin, setIsLogin] = useState(mode === "login");
+  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
     setIsLogin(mode === "login");
   }, [mode]);
 
   const toggleMode = () => setIsLogin((prev) => !prev);
+  const toggleDark = () => setDarkMode((prev) => !prev);
 
   const handleGoogleLogin = async () => {
     try {
@@ -35,15 +37,37 @@ const AuthModal = ({ onClose, mode = "login" }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center items-center">
+    <div
+      className={`fixed inset-0 z-50 flex justify-center items-center ${
+        darkMode ? "dark" : ""
+      }`}
+    >
+      {/* Blurred background */}
       <div
         className="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm"
         onClick={onClose}
       />
+
+      {/* Modal */}
       <div className="relative bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-sm w-full z-50 text-center">
+        {/* Dark Mode Toggle */}
+        <button
+          onClick={toggleDark}
+          className="absolute top-4 right-4 p-2 rounded-full bg-gray-200 dark:bg-gray-700"
+        >
+          {darkMode ? (
+            <SunIcon className="h-5 w-5 text-yellow-400" />
+          ) : (
+            <MoonIcon className="h-5 w-5 text-gray-700" />
+          )}
+        </button>
+
+        {/* Title */}
         <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">
           {isLogin ? "Sign in to your account" : "Create your account"}
         </h2>
+
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
           {!isLogin && (
             <input
@@ -75,6 +99,7 @@ const AuthModal = ({ onClose, mode = "login" }) => {
           </button>
         </form>
 
+        {/* Google Button */}
         <button
           onClick={handleGoogleLogin}
           className="mt-4 w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded transition"
@@ -82,6 +107,7 @@ const AuthModal = ({ onClose, mode = "login" }) => {
           Continue with Google
         </button>
 
+        {/* Toggle Link */}
         <motion.div
           className="text-center mt-4 text-sm text-gray-600 dark:text-gray-300"
           initial={{ opacity: 0 }}
