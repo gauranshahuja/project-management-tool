@@ -1,12 +1,12 @@
 // src/pages/LandingPage.jsx
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import FeatureSection from "../components/FeatureSection";
 import ContactForm from "../components/ContactForm";
 import Newsletter from "../components/Newsletter";
 import TestimonialCard from "../components/Testimonials";
-import AuthModal from "../components/AuthModal";
 import Lottie from "lottie-react";
 import animationData from "../assets/animations/project-animation.json";
 import { motion } from "framer-motion";
@@ -15,33 +15,22 @@ import "aos/dist/aos.css";
 import { FaArrowUp } from "react-icons/fa";
 
 const LandingPage = () => {
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState("login");
+  const navigate = useNavigate();
 
   useEffect(() => {
     AOS.init({ duration: 1000 });
   }, []);
 
-  const openAuthModal = (mode) => {
-    setAuthMode(mode);
-    setShowAuthModal(true);
-  };
-
-  const closeAuthModal = () => {
-    setShowAuthModal(false);
+  const handleGetStarted = () => {
+    navigate("/home");
   };
 
   return (
     <div className="relative">
-      {/* Blur Background */}
-      {showAuthModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm z-40" onClick={closeAuthModal} />
-      )}
-
       {/* Main Content */}
-      <div className={`relative z-50`}>
+      <div className="relative z-50">
         <div id="top" />
-        <Navbar onAuthOpen={openAuthModal} />
+        <Navbar />
 
         {/* Hero Section */}
         <section className="min-h-screen flex flex-col justify-center items-center text-center px-6 pt-32">
@@ -68,7 +57,7 @@ const LandingPage = () => {
           </div>
 
           <motion.button
-            onClick={() => openAuthModal("login")}
+            onClick={handleGetStarted}
             whileHover={{ scale: 1.05 }}
             className="mt-2 inline-block px-6 py-3 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 transition"
           >
@@ -115,27 +104,6 @@ const LandingPage = () => {
           <Newsletter />
         </section>
 
-        {/* Auth Section CTA */}
-        <section id="auth" className="relative z-10 py-20 px-6 bg-white dark:bg-gray-900">
-          <h2 className="text-3xl font-bold text-center mb-8" data-aos="fade-up">
-            Ready to Get Started?
-          </h2>
-          <div className="flex justify-center gap-6">
-            <button
-              onClick={() => openAuthModal("login")}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 transition"
-            >
-              Login
-            </button>
-            <button
-              onClick={() => openAuthModal("register")}
-              className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-full shadow-md hover:bg-gray-300 dark:hover:bg-gray-600 transition"
-            >
-              Register
-            </button>
-          </div>
-        </section>
-
         {/* Contact Section */}
         <section id="contact" className="relative z-10 py-20 px-6 bg-white dark:bg-gray-900">
           <h2 className="text-3xl font-bold text-center mb-8" data-aos="fade-up">
@@ -157,13 +125,6 @@ const LandingPage = () => {
           © {new Date().getFullYear()} ProjectHub. All rights reserved.
         </footer>
       </div>
-
-      {/* Auth Modal */}
-      {showAuthModal && (
-        <div className="fixed inset-0 z-50 flex justify-center items-center">
-          <AuthModal mode={authMode} onClose={closeAuthModal} />
-        </div>
-      )}
     </div>
   );
 };
