@@ -1,7 +1,4 @@
-// src/pages/LandingPage.jsx
-
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import FeatureSection from "../components/FeatureSection";
 import ContactForm from "../components/ContactForm";
@@ -13,16 +10,19 @@ import { motion } from "framer-motion";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { FaArrowUp } from "react-icons/fa";
+import AuthModal from "../components/AuthModal"; // ✅ import the modal
 
 const LandingPage = () => {
-  const navigate = useNavigate();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState("login"); // can be "login" or "register"
 
   useEffect(() => {
     AOS.init({ duration: 1000 });
   }, []);
 
   const handleGetStarted = () => {
-    navigate("/home");
+    setAuthMode("login");
+    setShowAuthModal(true);
   };
 
   return (
@@ -125,6 +125,14 @@ const LandingPage = () => {
           © {new Date().getFullYear()} ProjectHub. All rights reserved.
         </footer>
       </div>
+
+      {/* ✅ Auth Modal */}
+      {showAuthModal && (
+        <AuthModal
+          mode={authMode}
+          onClose={() => setShowAuthModal(false)}
+        />
+      )}
     </div>
   );
 };
