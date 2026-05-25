@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: "https://project-management-tool-9yl1.onrender.com/", // ✅ Updated to live backend
+  baseURL: "https://project-management-tool-9yl1.onrender.com", 
   headers: {
     "Content-Type": "application/json",
   },
