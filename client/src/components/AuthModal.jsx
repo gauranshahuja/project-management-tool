@@ -1,7 +1,7 @@
 import { useState } from "react";
 import axios from "../services/axiosInstance";
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { auth } from "../utils/firebase";
+import { signInWithPopup } from "firebase/auth";
+import { auth, provider } from "../utils/firebase";
 
 const AuthModal = ({ mode = "login", onClose }) => {
   const [authMode, setAuthMode] = useState(mode);
@@ -35,15 +35,25 @@ const AuthModal = ({ mode = "login", onClose }) => {
   };
 
   const handleGoogleAuth = async () => {
-    const provider = new GoogleAuthProvider();
+    setLoading(true);
+    setError("");
+
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      console.log("Google Auth success:", user);
-      onClose(); // Close modal after success
+      const idToken = await user.getIdToken();
+
+      console.log("✅ Google login successful:", user);
+
+      // OPTIONAL: Send token to backend for verification or registration
+      // await axios.post("/api/google-login", { token: idToken });
+
+      onClose(); // Close modal on success
     } catch (err) {
-      console.error("Google Auth error:", err);
+      console.error("❌ Google Auth error:", err);
       setError("Google authentication failed.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -111,9 +121,10 @@ const AuthModal = ({ mode = "login", onClose }) => {
 
         <button
           onClick={handleGoogleAuth}
+          disabled={loading}
           className="w-full py-2 border rounded text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition"
         >
-          Continue with Google
+          {loading ? "Authenticating..." : "Continue with Google"}
         </button>
 
         <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-300">
