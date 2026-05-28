@@ -20,7 +20,7 @@ const AuthModal = ({ mode = "login", onClose }) => {
     setLoading(true);
     setError("");
 
-    const endpoint = isLogin ? "api/login" : "api/register";
+    const endpoint = isLogin ? "/user/login" : "/user/register";
 
     try {
       const response = await axios.post(endpoint, formData);
