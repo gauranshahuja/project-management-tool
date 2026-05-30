@@ -25,7 +25,8 @@ const AuthModal = ({ mode = "login", onClose }) => {
     try {
       const response = await axios.post(endpoint, formData);
       console.log("Success:", response.data);
-      onClose(); // close modal on success
+      onClose(); 
+      window.location.href = "/dashboard";
     } catch (err) {
       console.error("Auth error:", err);
       setError(err.response?.data?.message || "Something went wrong.");
