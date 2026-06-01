@@ -36,27 +36,34 @@ const AuthModal = ({ mode = "login", onClose }) => {
   };
 
   const handleGoogleAuth = async () => {
-    setLoading(true);
-    setError("");
+  setLoading(true);
+  setError("");
 
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      const idToken = await user.getIdToken();
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    const idToken = await user.getIdToken();
 
-      console.log("✅ Google login successful:", user);
+    // Send Firebase token to backend for verification
+    const response = await axios.post("/users/google-login", { token: idToken });
 
-      // OPTIONAL: Send token to backend for verification or registration
-      // await axios.post("/api/google-login", { token: idToken });
+    // Get your backend JWT token from response
+    const token = response.data.user.token;
 
-      onClose(); // Close modal on success
-    } catch (err) {
-      console.error("❌ Google Auth error:", err);
-      setError("Google authentication failed.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Store JWT token locally (e.g., localStorage)
+    localStorage.setItem("token", token);
+
+    // Close modal and redirect to dashboard
+    onClose();
+    window.location.href = "/dashboard";
+  } catch (err) {
+    console.error("❌ Google Auth error:", err);
+    setError("Google authentication failed.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
