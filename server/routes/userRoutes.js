@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { registerUser, loginUser } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
-const User = require('../models/userModel');
+const User = require('../models/User');
 const admin = require('../utils/firebaseAdmin'); // ✅ make sure initialized
 const generateToken = require('../utils/generateToken'); // ✅ if using JWT
 
