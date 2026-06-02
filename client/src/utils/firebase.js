@@ -1,24 +1,34 @@
-// src/utils/firebase.js (or src/firebase.js, depending on your structure)
+// src/utils/firebase.js
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth"; // ✅ include signInWithPopup
+import {
+  getAuth,
+  GoogleAuthProvider,
+  GithubAuthProvider,
+  signInWithPopup
+} from "firebase/auth";
 
-// ✅ Firebase config
+// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDNR0nJw0uo-Cm4kdUwhttchqcdu0sg8dQ",
   authDomain: "project-management-tool-82a1c.firebaseapp.com",
   projectId: "project-management-tool-82a1c",
-  storageBucket: "project-management-tool-82a1c.appspot.com", 
+  storageBucket: "project-management-tool-82a1c.appspot.com",
   messagingSenderId: "261075120730",
   appId: "1:261075120730:web:47f49d8383255953a75e63",
   measurementId: "G-ZTX9M41WM2"
 };
 
-// ✅ Initialize Firebase
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// ✅ Auth Setup
+// Auth setup
 const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
+const googleProvider = new GoogleAuthProvider();
+const githubProvider = new GithubAuthProvider();
 
-// ✅ Export for use in app
-export { auth, provider, app, signInWithPopup }; // ✅ add signInWithPopup here
+export {
+  auth,
+  googleProvider,
+  githubProvider,
+  signInWithPopup
+};

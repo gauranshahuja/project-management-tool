@@ -1,7 +1,11 @@
 import { useState } from "react";
 import axios from "../services/axiosInstance";
-import { signInWithPopup } from "firebase/auth";
-import { auth, provider } from "../utils/firebase";
+import {
+  auth,
+  googleProvider,
+  githubProvider,
+  signInWithPopup,
+} from "../utils/firebase";
 
 const AuthModal = ({ mode = "login", onClose }) => {
   const [authMode, setAuthMode] = useState(mode);
@@ -25,7 +29,8 @@ const AuthModal = ({ mode = "login", onClose }) => {
     try {
       const response = await axios.post(endpoint, formData);
       console.log("Success:", response.data);
-      onClose(); 
+      localStorage.setItem("token", response.data.user.token);
+      onClose();
       window.location.href = "/dashboard";
     } catch (err) {
       console.error("Auth error:", err);
@@ -35,39 +40,32 @@ const AuthModal = ({ mode = "login", onClose }) => {
     }
   };
 
-  const handleGoogleAuth = async () => {
-  setLoading(true);
-  setError("");
+  const handleSocialAuth = async (provider, label) => {
+    setLoading(true);
+    setError("");
 
-  try {
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-    const idToken = await user.getIdToken();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      const idToken = await user.getIdToken();
 
-    // Send Firebase token to backend for verification
-    const response = await axios.post("/users/google-login", { token: idToken });
+      const response = await axios.post("/users/social-login", { token: idToken });
+      const token = response.data.user.token;
 
-    // Get your backend JWT token from response
-    const token = response.data.user.token;
-
-    // Store JWT token locally (e.g., localStorage)
-    localStorage.setItem("token", token);
-
-    // Close modal and redirect to dashboard
-    onClose();
-    window.location.href = "/dashboard";
-  } catch (err) {
-    console.error("❌ Google Auth error:", err);
-    setError("Google authentication failed.");
-  } finally {
-    setLoading(false);
-  }
-};
-
+      localStorage.setItem("token", token);
+      onClose();
+      window.location.href = "/dashboard";
+    } catch (err) {
+      console.error(`${label} sign-in error:`, err);
+      setError(`${label} authentication failed.`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-md p-6 relative">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-md p-6 relative shadow-lg">
         <button
           onClick={onClose}
           className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white"
@@ -80,9 +78,7 @@ const AuthModal = ({ mode = "login", onClose }) => {
         </h2>
 
         {error && (
-          <p className="text-red-600 text-sm mb-4 text-center">
-            {error}
-          </p>
+          <p className="text-red-600 text-sm mb-4 text-center">{error}</p>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -127,13 +123,23 @@ const AuthModal = ({ mode = "login", onClose }) => {
 
         <div className="text-center my-4 text-gray-500 dark:text-gray-400">or</div>
 
-        <button
-          onClick={handleGoogleAuth}
-          disabled={loading}
-          className="w-full py-2 border rounded text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-        >
-          {loading ? "Authenticating..." : "Continue with Google"}
-        </button>
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={() => handleSocialAuth(googleProvider, "Google")}
+            disabled={loading}
+            className="w-full py-2 border rounded text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+          >
+            {loading ? "Authenticating..." : "Continue with Google"}
+          </button>
+
+          <button
+            onClick={() => handleSocialAuth(githubProvider, "GitHub")}
+            disabled={loading}
+            className="w-full py-2 border rounded text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+          >
+            {loading ? "Authenticating..." : "Continue with GitHub"}
+          </button>
+        </div>
 
         <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-300">
           {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
