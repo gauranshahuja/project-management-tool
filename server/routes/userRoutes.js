@@ -12,35 +12,40 @@ router.post('/register', registerUser);
 // Login user
 router.post('/login', loginUser);
 
-// Google OAuth login
-router.post('/google-login', async (req, res) => {
+// 🔐 Social login (Google or GitHub via Firebase)
+router.post('/social-login', async (req, res) => {
   const { token } = req.body;
 
   try {
-    // Verify Firebase ID token sent from client
+    // ✅ 1. Verify Firebase token
     const decoded = await admin.auth().verifyIdToken(token);
-    const { name, email, uid } = decoded;
+    const { name, email, uid, picture, firebase } = decoded;
 
     if (!email) {
-      return res.status(400).json({ message: "Google token missing email" });
+      return res.status(400).json({ message: "Token missing email" });
     }
 
-    // Check if user already exists
+    // ✅ 2. Check if user already exists
     let user = await User.findOne({ email });
 
-    // Create user if not found
     if (!user) {
+      // Determine auth provider (e.g., google.com or github.com)
+      const provider = firebase?.sign_in_provider || "firebase";
+
+      // ✅ 3. Create user
       user = await User.create({
-        name: name || "Google User",
+        name: name || "OAuth User",
         email,
-        password: uid + "_google", // just to satisfy schema, not used
-        isGoogle: true, // optional flag
+        password: uid + "_" + provider, // dummy password
+        avatar: picture || "",
+        isOAuth: true,
+        authProvider: provider,
       });
     }
 
-    // Respond with user info and JWT token
+    // ✅ 4. Respond with token and user data
     res.json({
-      message: "Google login successful",
+      message: `${user.authProvider || "Social"} login successful`,
       user: {
         id: user._id,
         name: user.name,
@@ -50,12 +55,12 @@ router.post('/google-login', async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Google Auth Error:", error.message);
-    res.status(401).json({ message: "Invalid Google token" });
+    console.error("OAuth Login Error:", error.message);
+    res.status(401).json({ message: "Invalid social token" });
   }
 });
 
-// Protected route: user profile
+// 🔒 Protected route
 router.get('/profile', protect, async (req, res) => {
   res.json({
     id: req.user._id,
