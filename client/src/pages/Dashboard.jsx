@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import axios from "../services/axiosInstance";
 import { useNavigate } from "react-router-dom";
+import axios from "../services/axiosInstance";
+import { FiPlus } from "react-icons/fi";
+import DashboardCard from "../components/DashboardCard";
 
-function Dashboard() {
+const Dashboard = () => {
   const [projects, setProjects] = useState([]);
   const navigate = useNavigate();
 
@@ -15,37 +17,38 @@ function Dashboard() {
         headers: { Authorization: `Bearer ${user.token}` },
       })
       .then((res) => setProjects(res.data))
-      .catch((err) => console.log(err));
+      .catch((err) => console.error(err));
   }, [navigate]);
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Your Projects</h1>
-      <button
-        onClick={() => navigate("/create-project")}
-        className="bg-blue-600 text-white px-4 py-2 rounded mb-4"
-      >
-        + New Project
-      </button>
+    <div className="min-h-screen p-6 bg-gradient-to-br from-gray-100 via-white to-gray-200 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+          Your Projects
+        </h1>
+        <button
+          onClick={() => navigate("/create-project")}
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded shadow transition"
+        >
+          <FiPlus size={20} /> New Project
+        </button>
+      </div>
 
       {projects.length === 0 ? (
-        <p>No projects found. Create one!</p>
+        <p className="text-gray-600 dark:text-gray-300">No projects found. Create one!</p>
       ) : (
-        <ul className="space-y-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((project) => (
-            <li
+            <DashboardCard
               key={project._id}
-              className="bg-gray-100 p-4 rounded shadow hover:bg-gray-200 cursor-pointer"
+              project={project}
               onClick={() => navigate(`/project/${project._id}`)}
-            >
-              <h2 className="font-semibold">{project.title}</h2>
-              <p className="text-sm">{project.description}</p>
-            </li>
+            />
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
-}
+};
 
 export default Dashboard;
