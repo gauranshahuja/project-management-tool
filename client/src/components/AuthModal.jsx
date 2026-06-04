@@ -45,51 +45,71 @@ const AuthModal = ({ mode = "login", onClose }) => {
   };
 
   const handleSocialAuth = async (provider, label) => {
-    setLoading(true);
-    setError("");
+  setLoading(true);
+  setError("");
 
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      const idToken = await user.getIdToken();
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    const idToken = await user.getIdToken();
 
-      const response = await axios.post("/users/social-login", { token: idToken });
-      const token = response.data.user.token;
+    const response = await axios.post("/users/social-login", { token: idToken });
+    const token = response.data.user.token;
 
-      localStorage.setItem("token", token);
-      onClose();
-      window.location.href = "/dashboard";
-    } catch (err) {
-      console.error(`${label} sign-in error:`, err);
+    localStorage.setItem("token", token);
+    onClose();
+    window.location.href = "/dashboard";
+  } catch (err) {
+    console.error(`${label} sign-in error:`, err);
 
-      // Handle email conflict
-      if (
-        err.code === "auth/account-exists-with-different-credential" &&
-        err.customData?.email
-      ) {
-        const email = err.customData.email;
+    // Handle account-exists error
+    if (err.code === "auth/account-exists-with-different-credential" && err.customData?.email) {
+      const email = err.customData.email;
+      const pendingCred = err.credential;
 
-        try {
-          const methods = await fetchSignInMethodsForEmail(auth, email);
+      try {
+        const signInMethods = await fetchSignInMethodsForEmail(auth, email);
 
-          if (methods.includes("google.com")) {
-            setError("This email is already registered with Google. Please sign in with Google instead.");
-          } else if (methods.includes("github.com")) {
-            setError("This email is already registered with GitHub. Please sign in with GitHub instead.");
-          } else {
-            setError("This email is already registered with another provider.");
-          }
-        } catch (fetchErr) {
-          console.error("Fetch method error:", fetchErr);
-          setError("This account exists with a different sign-in method.");
+        if (signInMethods.includes("google.com")) {
+          // Prompt user to sign in with Google first
+          const googleResult = await signInWithPopup(auth, googleProvider);
+          // Link GitHub credential to Google account
+          await auth.currentUser.linkWithCredential(pendingCred);
+
+          const idToken = await googleResult.user.getIdToken();
+          const response = await axios.post("/users/social-login", { token: idToken });
+          const token = response.data.user.token;
+
+          localStorage.setItem("token", token);
+          onClose();
+          window.location.href = "/dashboard";
+        } else if (signInMethods.includes("github.com")) {
+          // Prompt user to sign in with GitHub first
+          const githubResult = await signInWithPopup(auth, githubProvider);
+          // Link Google credential to GitHub account
+          await auth.currentUser.linkWithCredential(pendingCred);
+
+          const idToken = await githubResult.user.getIdToken();
+          const response = await axios.post("/users/social-login", { token: idToken });
+          const token = response.data.user.token;
+
+          localStorage.setItem("token", token);
+          onClose();
+          window.location.href = "/dashboard";
+        } else {
+          setError("This email is registered with another provider. Please use your original method to sign in.");
         }
-      } else {
-        setError(`${label} authentication failed.`);
+      } catch (linkErr) {
+        console.error("Account linking failed:", linkErr);
+        setError("Account linking failed. Please try again.");
       }
-    } finally {
-      setLoading(false);
+    } else {
+      setError(`${label} authentication failed.`);
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">

@@ -30,5 +30,9 @@ export {
   auth,
   googleProvider,
   githubProvider,
-  signInWithPopup
+  signInWithPopup,
+  fetchSignInMethodsForEmail,
+  linkWithCredential,
+  GithubAuthProvider,
+  GoogleAuthProvider
 };
