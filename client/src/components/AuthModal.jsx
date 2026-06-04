@@ -6,6 +6,11 @@ import {
   githubProvider,
   signInWithPopup,
 } from "../utils/firebase";
+import {
+  fetchSignInMethodsForEmail,
+  GithubAuthProvider,
+  GoogleAuthProvider,
+} from "firebase/auth";
 
 const AuthModal = ({ mode = "login", onClose }) => {
   const [authMode, setAuthMode] = useState(mode);
@@ -28,7 +33,6 @@ const AuthModal = ({ mode = "login", onClose }) => {
 
     try {
       const response = await axios.post(endpoint, formData);
-      console.log("Success:", response.data);
       localStorage.setItem("token", response.data.user.token);
       onClose();
       window.location.href = "/dashboard";
@@ -57,7 +61,31 @@ const AuthModal = ({ mode = "login", onClose }) => {
       window.location.href = "/dashboard";
     } catch (err) {
       console.error(`${label} sign-in error:`, err);
-      setError(`${label} authentication failed.`);
+
+      // Handle email conflict
+      if (
+        err.code === "auth/account-exists-with-different-credential" &&
+        err.customData?.email
+      ) {
+        const email = err.customData.email;
+
+        try {
+          const methods = await fetchSignInMethodsForEmail(auth, email);
+
+          if (methods.includes("google.com")) {
+            setError("This email is already registered with Google. Please sign in with Google instead.");
+          } else if (methods.includes("github.com")) {
+            setError("This email is already registered with GitHub. Please sign in with GitHub instead.");
+          } else {
+            setError("This email is already registered with another provider.");
+          }
+        } catch (fetchErr) {
+          console.error("Fetch method error:", fetchErr);
+          setError("This account exists with a different sign-in method.");
+        }
+      } else {
+        setError(`${label} authentication failed.`);
+      }
     } finally {
       setLoading(false);
     }
