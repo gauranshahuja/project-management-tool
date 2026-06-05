@@ -1,7 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Dashboard from "./pages/Dashboard";
-import CreateProject from "./pages/CreateProject";
 import LandingPage from "./pages/LandingPage";
 
 const App = () => {
@@ -17,10 +16,6 @@ const App = () => {
       <Route
         path="/dashboard"
         element={isAuthenticated ? <Dashboard /> : <LandingPage showAuth />}
-      />
-      <Route
-        path="/create-project"
-        element={isAuthenticated ? <CreateProject /> : <LandingPage showAuth />}
       />
       <Route
         path="*"
