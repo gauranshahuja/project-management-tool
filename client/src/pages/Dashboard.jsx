@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "../services/axiosInstance";
 import { FiPlus } from "react-icons/fi";
 import DashboardCard from "../components/DashboardCard";
-import Navbar_Dashboard from "../components/Navbar_Dashboard"; // ✅ Import updated navbar
+import Navbar_Dashboard from "../components/Navbar_dashboard"; 
 
 const Dashboard = () => {
   const [projects, setProjects] = useState([]);
