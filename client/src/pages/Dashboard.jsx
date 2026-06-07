@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "../services/axiosInstance";
 import { FiPlus } from "react-icons/fi";
 import DashboardCard from "../components/DashboardCard";
-import Navbar_Dashboard from "../components/Navbar_dashboard"; 
+import Navbar_Dashboard from "../components/Navbar_dashboard";
 
 const Dashboard = () => {
   const [projects, setProjects] = useState([]);
@@ -12,6 +12,7 @@ const Dashboard = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  // ✅ Load projects on mount
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) return navigate("/login");
@@ -21,13 +22,16 @@ const Dashboard = () => {
         headers: { Authorization: `Bearer ${user.token}` },
       })
       .then((res) => setProjects(res.data))
-      .catch((err) => console.error(err));
+      .catch((err) => {
+        console.error("Failed to fetch projects:", err);
+      });
   }, [navigate]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // ✅ Create new project
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -36,7 +40,7 @@ const Dashboard = () => {
       const user = JSON.parse(localStorage.getItem("user"));
       const res = await axios.post(
         "/projects",
-        { ...form, owner: user.id },
+        { ...form }, // ❌ owner bhejne ki zaroorat nahi, backend khud user lega
         {
           headers: {
             Authorization: `Bearer ${user.token}`,
