@@ -18,7 +18,7 @@ const CreateProjectModal = ({ onClose, onProjectCreated }) => {
     try {
       const user = JSON.parse(localStorage.getItem("user"));
       const res = await axios.post(
-        "/projects",
+        "/user/projects",
         { ...form, owner: user.id },
         {
           headers: { Authorization: `Bearer ${user.token}` },
