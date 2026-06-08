@@ -1,3 +1,4 @@
+// client/src/pages/Dashboard.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../services/axiosInstance";
@@ -15,15 +16,20 @@ const Dashboard = () => {
   // ✅ Load projects on mount
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
-    if (!user) return navigate("/login");
+    const token = user?.token;
+
+    if (!token) {
+      navigate("/login");
+      return;
+    }
 
     axios
       .get("/projects", {
-        headers: { Authorization: `Bearer ${user.token}` },
+        headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setProjects(res.data))
       .catch((err) => {
-        console.error("Failed to fetch projects:", err);
+        console.error("Failed to fetch projects:", err.response?.data || err.message);
       });
   }, [navigate]);
 
@@ -38,12 +44,19 @@ const Dashboard = () => {
 
     try {
       const user = JSON.parse(localStorage.getItem("user"));
+      const token = user?.token;
+
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
       const res = await axios.post(
         "/projects",
-        { ...form }, // ❌ owner bhejne ki zaroorat nahi, backend khud user lega
+        { ...form },
         {
           headers: {
-            Authorization: `Bearer ${user.token}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -51,6 +64,7 @@ const Dashboard = () => {
       setShowModal(false);
       setForm({ title: "", description: "" });
     } catch (err) {
+      console.error("Project creation error:", err.response?.data || err.message);
       setError(err.response?.data?.message || "Project creation failed");
     }
   };
