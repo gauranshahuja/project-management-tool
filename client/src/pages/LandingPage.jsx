@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import FeatureSection from "../components/FeatureSection";
 import ContactForm from "../components/ContactForm";
@@ -10,7 +10,7 @@ import { motion } from "framer-motion";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { FaArrowUp } from "react-icons/fa";
-import AuthModal from "../components/AuthModal"; // ✅ import the modal
+import AuthModal from "../components/AuthModal"; // import the modal
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -126,7 +126,7 @@ const LandingPage = () => {
         </footer>
       </div>
 
-      {/* ✅ Auth Modal */}
+      {/*  Auth Modal */}
       {showAuthModal && (
         <AuthModal
           mode={authMode}

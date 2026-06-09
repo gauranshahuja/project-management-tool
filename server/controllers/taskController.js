@@ -1,11 +1,21 @@
+const mongoose = require('mongoose');
 const Task = require('../models/Task');
+const asyncHandler = require('../utils/asyncHandler');
 
 // @desc Get all tasks for a specific project with pagination, filtering, search
-exports.getTasks = async (req, res) => {
-  const { page = 1, limit = 10, status, search } = req.query;
+exports.getTasks = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(projectId)) {
+    return res.status(400).json({ error: 'Invalid project id' });
+  }
+
+  const page = Math.max(parseInt(req.query.page) || 1, 1);
+  const limit = Math.max(parseInt(req.query.limit) || 10, 1);
+  const { status, search } = req.query;
 
   const query = {
-    project: req.params.projectId,
+    project: projectId,
     user: req.user._id,
   };
 
@@ -22,7 +32,7 @@ exports.getTasks = async (req, res) => {
 
   const tasks = await Task.find(query)
     .skip((page - 1) * limit)
-    .limit(parseInt(limit))
+    .limit(limit)
     .sort({ dueDate: 1 });
 
   const total = await Task.countDocuments(query);
@@ -30,18 +40,24 @@ exports.getTasks = async (req, res) => {
   res.json({
     tasks,
     totalPages: Math.ceil(total / limit),
-    currentPage: parseInt(page),
+    currentPage: page,
     totalTasks: total
   });
-};
+});
 
 // @desc Get task statistics by status
-exports.getTaskStats = async (req, res) => {
+exports.getTaskStats = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(projectId)) {
+    return res.status(400).json({ error: 'Invalid project id' });
+  }
+
   const stats = await Task.aggregate([
     {
       $match: {
-        user: req.user._id,
-        project: req.params.projectId
+        user: new mongoose.Types.ObjectId(req.user._id),
+        project: new mongoose.Types.ObjectId(projectId)
       }
     },
     {
@@ -53,11 +69,16 @@ exports.getTaskStats = async (req, res) => {
   ]);
 
   res.json(stats);
-};
-
+});
 
 // @desc Create a task in a project
-exports.createTask = async (req, res) => {
+exports.createTask = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(projectId)) {
+    return res.status(400).json({ error: 'Invalid project id' });
+  }
+
   const { title, description, status, dueDate } = req.body;
 
   if (!title) {
@@ -65,7 +86,7 @@ exports.createTask = async (req, res) => {
   }
 
   const task = await Task.create({
-    project: req.params.projectId,
+    project: projectId,
     user: req.user._id,
     title,
     description,
@@ -74,10 +95,10 @@ exports.createTask = async (req, res) => {
   });
 
   res.status(201).json(task);
-};
+});
 
 // @desc Update a task
-exports.updateTask = async (req, res) => {
+exports.updateTask = asyncHandler(async (req, res) => {
   const task = await Task.findById(req.params.id);
 
   if (!task) {
@@ -85,15 +106,18 @@ exports.updateTask = async (req, res) => {
   }
 
   if (task.user.toString() !== req.user._id.toString()) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(403).json({ error: 'Not authorized to modify this task' });
   }
 
-  const updated = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  const updated = await Task.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true,
+  });
   res.json(updated);
-};
+});
 
 // @desc Delete a task
-exports.deleteTask = async (req, res) => {
+exports.deleteTask = asyncHandler(async (req, res) => {
   const task = await Task.findById(req.params.id);
 
   if (!task) {
@@ -101,9 +125,9 @@ exports.deleteTask = async (req, res) => {
   }
 
   if (task.user.toString() !== req.user._id.toString()) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(403).json({ error: 'Not authorized to modify this task' });
   }
 
   await task.deleteOne();
   res.json({ message: 'Task deleted successfully' });
-};
+});

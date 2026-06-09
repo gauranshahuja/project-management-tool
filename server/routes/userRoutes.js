@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const { registerUser, loginUser } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
@@ -12,12 +12,12 @@ router.post('/register', registerUser);
 // Login user
 router.post('/login', loginUser);
 
-// 🔐 Social login (Google or GitHub via Firebase)
+// Social login (Google or GitHub via Firebase)
 router.post('/social-login', async (req, res) => {
   const { token } = req.body;
 
   try {
-    // ✅ 1. Verify Firebase token
+    // 1. Verify Firebase token
     const decoded = await admin.auth().verifyIdToken(token);
     const { name, email, uid, picture, firebase } = decoded;
 
@@ -25,14 +25,14 @@ router.post('/social-login', async (req, res) => {
       return res.status(400).json({ message: "Token missing email" });
     }
 
-    // ✅ 2. Check if user already exists
+    // 2. Check if user already exists
     let user = await User.findOne({ email });
 
     if (!user) {
       // Determine auth provider (e.g., google.com or github.com)
       const provider = firebase?.sign_in_provider || "firebase";
 
-      // ✅ 3. Create user
+      // 3. Create user
       user = await User.create({
         name: name || "OAuth User",
         email,
@@ -43,7 +43,7 @@ router.post('/social-login', async (req, res) => {
       });
     }
 
-    // ✅ 4. Respond with token and user data
+    // 4. Respond with token and user data
     res.json({
       message: `${user.authProvider || "Social"} login successful`,
       user: {
@@ -60,7 +60,7 @@ router.post('/social-login', async (req, res) => {
   }
 });
 
-// 🔒 Protected route
+// Protected route
 router.get('/profile', protect, async (req, res) => {
   res.json({
     id: req.user._id,
