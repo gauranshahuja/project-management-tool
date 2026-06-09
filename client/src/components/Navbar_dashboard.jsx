@@ -1,6 +1,7 @@
-import { useNavigate } from "react-router-dom";
+﻿import { useNavigate } from "react-router-dom";
 import { FiLogOut, FiSun, FiMoon, FiUser } from "react-icons/fi";
 import { useEffect, useState } from "react";
+import { clearStoredUser, getStoredUser } from "../utils/authStorage";
 
 const Navbar_Dashboard = () => {
   const navigate = useNavigate();
@@ -9,12 +10,11 @@ const Navbar_Dashboard = () => {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    setUser(storedUser);
+    setUser(getStoredUser());
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    clearStoredUser();
     navigate("/");
   };
 
@@ -31,7 +31,7 @@ const Navbar_Dashboard = () => {
         className="text-xl font-bold text-indigo-600 cursor-pointer"
         onClick={() => navigate("/dashboard")}
       >
-        🚀 MyDashboard
+         MyDashboard
       </div>
 
       {/* Right section */}

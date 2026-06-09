@@ -1,7 +1,8 @@
-// client/src/pages/Dashboard.jsx
+﻿// client/src/pages/Dashboard.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../services/axiosInstance";
+import { getStoredUser } from "../utils/authStorage";
 import { FiPlus } from "react-icons/fi";
 import DashboardCard from "../components/DashboardCard";
 import Navbar_Dashboard from "../components/Navbar_dashboard";
@@ -13,23 +14,24 @@ const Dashboard = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // ✅ Load projects on mount
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    const token = user?.token;
+  const getErrorMessage = (err, fallback) =>
+    err.response?.data?.error || err.response?.data?.message || fallback;
 
-    if (!token) {
-      navigate("/login");
+  // Load projects on mount
+  useEffect(() => {
+    const user = getStoredUser();
+
+    if (!user?.token) {
+      navigate("/");
       return;
     }
 
     axios
-      .get("/projects", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      .get("/projects")
       .then((res) => setProjects(res.data))
       .catch((err) => {
         console.error("Failed to fetch projects:", err.response?.data || err.message);
+        setError(getErrorMessage(err, "Failed to fetch projects"));
       });
   }, [navigate]);
 
@@ -37,41 +39,32 @@ const Dashboard = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // ✅ Create new project
+  // Create new project
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
-      const token = user?.token;
+      const user = getStoredUser();
 
-      if (!token) {
-        navigate("/login");
+      if (!user?.token) {
+        navigate("/");
         return;
       }
 
-      const res = await axios.post(
-        "/projects",
-        { ...form },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await axios.post("/projects", { ...form });
       setProjects((prev) => [...prev, res.data]);
       setShowModal(false);
       setForm({ title: "", description: "" });
     } catch (err) {
       console.error("Project creation error:", err.response?.data || err.message);
-      setError(err.response?.data?.message || "Project creation failed");
+      setError(getErrorMessage(err, "Project creation failed"));
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 via-white to-gray-200 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
-      {/* ✅ Dashboard Navbar */}
+      {/*  Dashboard Navbar */}
       <Navbar_Dashboard />
 
       <div className="p-6">
@@ -105,7 +98,7 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* ✅ Project Modal */}
+      {/*  Project Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-lg w-full max-w-md relative">
@@ -113,7 +106,7 @@ const Dashboard = () => {
               onClick={() => setShowModal(false)}
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white text-xl"
             >
-              ✕
+              
             </button>
             <h2 className="text-2xl font-bold mb-4 text-center text-gray-800 dark:text-white">
               Create Project

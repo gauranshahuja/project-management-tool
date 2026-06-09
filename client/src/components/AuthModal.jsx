@@ -1,5 +1,6 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import axios from "../services/axiosInstance";
+import { setStoredUser } from "../utils/authStorage";
 import {
   auth,
   googleProvider,
@@ -20,6 +21,9 @@ const AuthModal = ({ mode = "login", onClose }) => {
 
   const isLogin = authMode === "login";
 
+  const getErrorMessage = (err, fallback) =>
+    err.response?.data?.error || err.response?.data?.message || fallback;
+
   const handleInputChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -33,12 +37,12 @@ const AuthModal = ({ mode = "login", onClose }) => {
 
     try {
       const response = await axios.post(endpoint, formData);
-      localStorage.setItem("token", response.data.user.token);
+      setStoredUser(response.data.user);
       onClose();
       window.location.href = "/dashboard";
     } catch (err) {
       console.error("Auth error:", err);
-      setError(err.response?.data?.message || "Something went wrong.");
+      setError(getErrorMessage(err, "Something went wrong."));
     } finally {
       setLoading(false);
     }
@@ -54,9 +58,8 @@ const AuthModal = ({ mode = "login", onClose }) => {
     const idToken = await user.getIdToken();
 
     const response = await axios.post("/users/social-login", { token: idToken });
-    const token = response.data.user.token;
 
-    localStorage.setItem("token", token);
+    setStoredUser(response.data.user);
     onClose();
     window.location.href = "/dashboard";
   } catch (err) {
@@ -78,9 +81,8 @@ const AuthModal = ({ mode = "login", onClose }) => {
 
           const idToken = await googleResult.user.getIdToken();
           const response = await axios.post("/users/social-login", { token: idToken });
-          const token = response.data.user.token;
 
-          localStorage.setItem("token", token);
+          setStoredUser(response.data.user);
           onClose();
           window.location.href = "/dashboard";
         } else if (signInMethods.includes("github.com")) {
@@ -91,9 +93,8 @@ const AuthModal = ({ mode = "login", onClose }) => {
 
           const idToken = await githubResult.user.getIdToken();
           const response = await axios.post("/users/social-login", { token: idToken });
-          const token = response.data.user.token;
 
-          localStorage.setItem("token", token);
+          setStoredUser(response.data.user);
           onClose();
           window.location.href = "/dashboard";
         } else {
@@ -118,7 +119,7 @@ const AuthModal = ({ mode = "login", onClose }) => {
           onClick={onClose}
           className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white"
         >
-          ✕
+          
         </button>
 
         <h2 className="text-2xl font-bold mb-4 text-center text-gray-800 dark:text-white">

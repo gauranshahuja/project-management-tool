@@ -3,3 +3,10 @@ client/node_modules/
 server/node_modules/
 .env
 dist/
+
+# AI collaboration / internal notes & tooling — kabhi push na ho
+API_CONTRACT.md
+*.ai.md
+.ai/
+AI_NOTES.md
+scripts/

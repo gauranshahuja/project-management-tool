@@ -1,4 +1,4 @@
-const User = require('../models/User');
+﻿const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 
 // @desc    Register new user
@@ -26,11 +26,11 @@ const registerUser = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        token: generateToken(user._id), // ✅ Token included
+        token: generateToken(user._id), // Token included
       },
     });
   } catch (error) {
-    console.error('🔥 Server error:', error.message);
+    console.error('Server error:', error.message);
     res.status(500).json({ error: 'Server error' });
   }
 };
@@ -60,11 +60,11 @@ const loginUser = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        token: generateToken(user._id), // ✅ Token included
+        token: generateToken(user._id), // Token included
       },
     });
   } catch (error) {
-    console.error('🔥 Server error:', error.message);
+    console.error('Server error:', error.message);
     res.status(500).json({ error: 'Server error' });
   }
 };

@@ -1,10 +1,14 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import axios from "../services/axiosInstance";
+import { getStoredUser } from "../utils/authStorage";
 
 const CreateProjectModal = ({ onClose, onProjectCreated }) => {
   const [form, setForm] = useState({ title: "", description: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const getErrorMessage = (err, fallback) =>
+    err.response?.data?.error || err.response?.data?.message || fallback;
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -16,19 +20,19 @@ const CreateProjectModal = ({ onClose, onProjectCreated }) => {
     setLoading(true);
 
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
-      const res = await axios.post(
-        "/user/projects",
-        { ...form, owner: user.id },
-        {
-          headers: { Authorization: `Bearer ${user.token}` },
-        }
-      );
+      const user = getStoredUser();
+
+      if (!user?.token) {
+        setError("Please login again.");
+        return;
+      }
+
+      const res = await axios.post("/projects", { ...form });
 
       onProjectCreated(res.data); // Notify parent to refresh project list
       onClose(); // Close modal
     } catch (err) {
-      setError(err.response?.data?.message || "Project creation failed");
+      setError(getErrorMessage(err, "Project creation failed"));
     } finally {
       setLoading(false);
     }
@@ -41,7 +45,7 @@ const CreateProjectModal = ({ onClose, onProjectCreated }) => {
           onClick={onClose}
           className="absolute top-3 right-3 text-gray-500 hover:text-black dark:text-gray-300 dark:hover:text-white text-xl"
         >
-          ✕
+          
         </button>
 
         <h2 className="text-2xl font-bold mb-4 text-center dark:text-white">

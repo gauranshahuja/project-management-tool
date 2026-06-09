@@ -2,12 +2,13 @@ import { Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Dashboard from "./pages/Dashboard";
 import LandingPage from "./pages/LandingPage";
+import { getStoredUser } from "./utils/authStorage";
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    setIsAuthenticated(!!localStorage.getItem("token"));
+    setIsAuthenticated(!!getStoredUser()?.token);
   }, []);
 
   return (
