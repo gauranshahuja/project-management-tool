@@ -1,22 +1,40 @@
 import { Routes, Route } from "react-router-dom";
-import { useEffect, useState } from "react";
 import Dashboard from "./pages/Dashboard";
 import LandingPage from "./pages/LandingPage";
+import ProjectDetail from "./pages/ProjectDetail";
 import { getStoredUser } from "./utils/authStorage";
 
+const ProtectedRoute = ({ children }) => {
+  return getStoredUser()?.token ? children : <LandingPage showAuth />;
+};
+
 const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    setIsAuthenticated(!!getStoredUser()?.token);
-  }, []);
-
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route
         path="/dashboard"
-        element={isAuthenticated ? <Dashboard /> : <LandingPage showAuth />}
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/projects/:projectId"
+        element={
+          <ProtectedRoute>
+            <ProjectDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/project/:projectId"
+        element={
+          <ProtectedRoute>
+            <ProjectDetail />
+          </ProtectedRoute>
+        }
       />
       <Route
         path="*"

@@ -3,7 +3,7 @@ import { Link } from "react-scroll";
 import { FaBars, FaTimes } from "react-icons/fa";
 import DarkModeToggle from "./DarkModeToggle";
 
-const Navbar = () => {
+const Navbar = ({ onLogin, onRegister }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -15,6 +15,11 @@ const Navbar = () => {
   ];
 
   const toggleMenu = () => setMenuOpen((prev) => !prev);
+
+  const handleAuthClick = (action) => {
+    action();
+    setMenuOpen(false);
+  };
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -52,6 +57,21 @@ const Navbar = () => {
           ))}
 
           <DarkModeToggle />
+
+          <button
+            type="button"
+            onClick={onLogin}
+            className="rounded-md px-3 py-2 text-sm font-medium text-gray-800 transition hover:bg-gray-100 hover:text-indigo-600 dark:text-white dark:hover:bg-gray-800 dark:hover:text-indigo-400"
+          >
+            Login
+          </button>
+          <button
+            type="button"
+            onClick={onRegister}
+            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
+          >
+            Register
+          </button>
         </nav>
 
         {/* Mobile Menu Toggle */}
@@ -82,6 +102,23 @@ const Navbar = () => {
           ))}
 
           <DarkModeToggle />
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => handleAuthClick(onLogin)}
+              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-800 transition hover:bg-gray-100 dark:border-gray-700 dark:text-white dark:hover:bg-gray-800"
+            >
+              Login
+            </button>
+            <button
+              type="button"
+              onClick={() => handleAuthClick(onRegister)}
+              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
+            >
+              Register
+            </button>
+          </div>
         </div>
       )}
     </header>

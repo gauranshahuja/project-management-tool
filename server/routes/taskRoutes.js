@@ -6,10 +6,14 @@ const {
   updateTask,
   deleteTask,
   getTaskStats,
+  getMyTasks,
 } = require('../controllers/taskController');
 const { protect } = require('../middleware/authMiddleware');
 
 // Task Routes (Nested under /api/tasks)
+// NOTE: '/me' ko '/:id' se pehle rakhna zaroori hai
+router.get('/me', protect, getMyTasks); // Mere assigned tasks (org-wide)
+
 router.route('/project/:projectId')
   .get(protect, getTasks)       // GET tasks with pagination, search, filter
   .post(protect, createTask);   // Create task

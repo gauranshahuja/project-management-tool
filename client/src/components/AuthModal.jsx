@@ -1,5 +1,6 @@
 ﻿import { useState } from "react";
 import axios from "../services/axiosInstance";
+import { useEffect } from "react";
 import { setStoredUser } from "../utils/authStorage";
 import {
   auth,
@@ -11,7 +12,9 @@ import {
   fetchSignInMethodsForEmail,
   GithubAuthProvider,
   GoogleAuthProvider,
+  linkWithCredential,
 } from "firebase/auth";
+import { FiX } from "react-icons/fi";
 
 const AuthModal = ({ mode = "login", onClose }) => {
   const [authMode, setAuthMode] = useState(mode);
@@ -21,11 +24,29 @@ const AuthModal = ({ mode = "login", onClose }) => {
 
   const isLogin = authMode === "login";
 
+  useEffect(() => {
+    setAuthMode(mode);
+    setError("");
+  }, [mode]);
+
   const getErrorMessage = (err, fallback) =>
-    err.response?.data?.error || err.response?.data?.message || fallback;
+    err.response?.data?.error || err.response?.data?.message || err.message || fallback;
+
+  const saveAuthResponse = (response) => {
+    const authUser = setStoredUser(response.data);
+
+    if (!authUser) {
+      throw new Error("Authentication response missing token.");
+    }
+  };
 
   const handleInputChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const toggleAuthMode = () => {
+    setAuthMode((currentMode) => (currentMode === "login" ? "register" : "login"));
+    setError("");
   };
 
   const handleSubmit = async (e) => {
@@ -37,7 +58,7 @@ const AuthModal = ({ mode = "login", onClose }) => {
 
     try {
       const response = await axios.post(endpoint, formData);
-      setStoredUser(response.data.user);
+      saveAuthResponse(response);
       onClose();
       window.location.href = "/dashboard";
     } catch (err) {
@@ -59,7 +80,7 @@ const AuthModal = ({ mode = "login", onClose }) => {
 
     const response = await axios.post("/users/social-login", { token: idToken });
 
-    setStoredUser(response.data.user);
+    saveAuthResponse(response);
     onClose();
     window.location.href = "/dashboard";
   } catch (err) {
@@ -68,7 +89,15 @@ const AuthModal = ({ mode = "login", onClose }) => {
     // Handle account-exists error
     if (err.code === "auth/account-exists-with-different-credential" && err.customData?.email) {
       const email = err.customData.email;
-      const pendingCred = err.credential;
+      const pendingCred =
+        label === "Google"
+          ? GoogleAuthProvider.credentialFromError(err)
+          : GithubAuthProvider.credentialFromError(err);
+
+      if (!pendingCred) {
+        setError("Account linking failed. Please try again.");
+        return;
+      }
 
       try {
         const signInMethods = await fetchSignInMethodsForEmail(auth, email);
@@ -77,24 +106,24 @@ const AuthModal = ({ mode = "login", onClose }) => {
           // Prompt user to sign in with Google first
           const googleResult = await signInWithPopup(auth, googleProvider);
           // Link GitHub credential to Google account
-          await auth.currentUser.linkWithCredential(pendingCred);
+          await linkWithCredential(auth.currentUser, pendingCred);
 
           const idToken = await googleResult.user.getIdToken();
           const response = await axios.post("/users/social-login", { token: idToken });
 
-          setStoredUser(response.data.user);
+          saveAuthResponse(response);
           onClose();
           window.location.href = "/dashboard";
         } else if (signInMethods.includes("github.com")) {
           // Prompt user to sign in with GitHub first
           const githubResult = await signInWithPopup(auth, githubProvider);
           // Link Google credential to GitHub account
-          await auth.currentUser.linkWithCredential(pendingCred);
+          await linkWithCredential(auth.currentUser, pendingCred);
 
           const idToken = await githubResult.user.getIdToken();
           const response = await axios.post("/users/social-login", { token: idToken });
 
-          setStoredUser(response.data.user);
+          saveAuthResponse(response);
           onClose();
           window.location.href = "/dashboard";
         } else {
@@ -118,8 +147,9 @@ const AuthModal = ({ mode = "login", onClose }) => {
         <button
           onClick={onClose}
           className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white"
+          aria-label="Close auth form"
         >
-          
+          <FiX aria-hidden="true" />
         </button>
 
         <h2 className="text-2xl font-bold mb-4 text-center text-gray-800 dark:text-white">
@@ -194,7 +224,7 @@ const AuthModal = ({ mode = "login", onClose }) => {
           {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
           <button
             type="button"
-            onClick={() => setAuthMode(isLogin ? "register" : "login")}
+            onClick={toggleAuthMode}
             className="text-indigo-600 hover:underline dark:text-indigo-400"
           >
             {isLogin ? "Register" : "Login"}

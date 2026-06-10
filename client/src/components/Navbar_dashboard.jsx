@@ -11,6 +11,7 @@ const Navbar_Dashboard = () => {
 
   useEffect(() => {
     setUser(getStoredUser());
+    setIsDark(document.documentElement.classList.contains("dark"));
   }, []);
 
   const handleLogout = () => {
@@ -20,8 +21,11 @@ const Navbar_Dashboard = () => {
 
   const toggleDarkMode = () => {
     const html = document.documentElement;
-    html.classList.toggle("dark");
-    setIsDark(!isDark);
+    const nextIsDark = !isDark;
+
+    html.classList.toggle("dark", nextIsDark);
+    localStorage.setItem("theme", nextIsDark ? "dark" : "light");
+    setIsDark(nextIsDark);
   };
 
   return (
