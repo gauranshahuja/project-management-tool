@@ -7,6 +7,16 @@ const projectSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    organization: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Organization',
+    },
+    members: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
     title: {
       type: String,
       required: [true, 'Please add a project title'],

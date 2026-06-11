@@ -3,14 +3,50 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../services/axiosInstance";
 import { getStoredUser } from "../utils/authStorage";
-import { FiPlus } from "react-icons/fi";
+import { FiPlus, FiX } from "react-icons/fi";
 import DashboardCard from "../components/DashboardCard";
 import Navbar_Dashboard from "../components/Navbar_dashboard";
+
+const STATUS_OPTIONS = ["Not Started", "In Progress", "Completed"];
+
+const emptyProjectForm = {
+  title: "",
+  description: "",
+  status: "Not Started",
+  dueDate: "",
+};
+
+const toDateInputValue = (value) => {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return date.toISOString().slice(0, 10);
+};
+
+const createProjectPayload = (form, options = {}) => {
+  const payload = {
+    title: form.title.trim(),
+    description: form.description.trim(),
+    status: form.status,
+  };
+
+  if (form.dueDate) {
+    payload.dueDate = form.dueDate;
+  } else if (options.includeEmptyDueDate) {
+    payload.dueDate = null;
+  }
+
+  return payload;
+};
 
 const Dashboard = () => {
   const [projects, setProjects] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ title: "", description: "" });
+  const [modalMode, setModalMode] = useState("create");
+  const [editingProjectId, setEditingProjectId] = useState(null);
+  const [form, setForm] = useState(emptyProjectForm);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
@@ -39,7 +75,35 @@ const Dashboard = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Create new project
+  const openCreateModal = () => {
+    setModalMode("create");
+    setEditingProjectId(null);
+    setForm(emptyProjectForm);
+    setError("");
+    setShowModal(true);
+  };
+
+  const openEditModal = (project) => {
+    setModalMode("edit");
+    setEditingProjectId(project._id);
+    setForm({
+      title: project.title || "",
+      description: project.description || "",
+      status: project.status || "Not Started",
+      dueDate: toDateInputValue(project.dueDate),
+    });
+    setError("");
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setModalMode("create");
+    setEditingProjectId(null);
+    setForm(emptyProjectForm);
+    setError("");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -52,13 +116,51 @@ const Dashboard = () => {
         return;
       }
 
-      const res = await axios.post("/projects", { ...form });
-      setProjects((prev) => [...prev, res.data]);
-      setShowModal(false);
-      setForm({ title: "", description: "" });
+      const payload = createProjectPayload(form, {
+        includeEmptyDueDate: modalMode === "edit",
+      });
+
+      if (!payload.title) {
+        setError("Project title is required.");
+        return;
+      }
+
+      if (modalMode === "edit" && editingProjectId) {
+        const res = await axios.put(`/projects/${editingProjectId}`, payload);
+
+        setProjects((prev) =>
+          prev.map((project) =>
+            project._id === editingProjectId ? res.data : project
+          )
+        );
+      } else {
+        const res = await axios.post("/projects", payload);
+        setProjects((prev) => [...prev, res.data]);
+      }
+
+      closeModal();
     } catch (err) {
-      console.error("Project creation error:", err.response?.data || err.message);
-      setError(getErrorMessage(err, "Project creation failed"));
+      console.error("Project save error:", err.response?.data || err.message);
+      setError(
+        getErrorMessage(
+          err,
+          modalMode === "edit" ? "Project update failed" : "Project creation failed"
+        )
+      );
+    }
+  };
+
+  const handleDeleteProject = async (project) => {
+    if (!window.confirm(`Delete "${project.title}"?`)) return;
+
+    setError("");
+
+    try {
+      await axios.delete(`/projects/${project._id}`);
+      setProjects((prev) => prev.filter((item) => item._id !== project._id));
+    } catch (err) {
+      console.error("Project delete error:", err.response?.data || err.message);
+      setError(getErrorMessage(err, "Project delete failed"));
     }
   };
 
@@ -73,12 +175,18 @@ const Dashboard = () => {
             Your Projects
           </h1>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={openCreateModal}
             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded shadow transition"
           >
             <FiPlus size={20} /> New Project
           </button>
         </div>
+
+        {error && !showModal && (
+          <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+            {error}
+          </p>
+        )}
 
         {/* Projects Grid */}
         {projects.length === 0 ? (
@@ -91,7 +199,11 @@ const Dashboard = () => {
               <DashboardCard
                 key={project._id}
                 project={project}
-                onClick={() => navigate(`/project/${project._id}`)}
+                onClick={() =>
+                  navigate(`/projects/${project._id}`, { state: { project } })
+                }
+                onEdit={openEditModal}
+                onDelete={handleDeleteProject}
               />
             ))}
           </div>
@@ -103,13 +215,14 @@ const Dashboard = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-lg w-full max-w-md relative">
             <button
-              onClick={() => setShowModal(false)}
+              onClick={closeModal}
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white text-xl"
+              aria-label="Close project form"
             >
-              
+              <FiX aria-hidden="true" />
             </button>
             <h2 className="text-2xl font-bold mb-4 text-center text-gray-800 dark:text-white">
-              Create Project
+              {modalMode === "edit" ? "Edit Project" : "Create Project"}
             </h2>
             {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -127,14 +240,32 @@ const Dashboard = () => {
                 placeholder="Project Description"
                 value={form.description}
                 onChange={handleChange}
-                required
+                className="w-full px-4 py-2 border rounded dark:bg-gray-800 dark:text-white"
+              />
+              <select
+                name="status"
+                value={form.status}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border rounded dark:bg-gray-800 dark:text-white"
+              >
+                {STATUS_OPTIONS.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="date"
+                name="dueDate"
+                value={form.dueDate}
+                onChange={handleChange}
                 className="w-full px-4 py-2 border rounded dark:bg-gray-800 dark:text-white"
               />
               <button
                 type="submit"
                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded"
               >
-                Create
+                {modalMode === "edit" ? "Save Changes" : "Create"}
               </button>
             </form>
           </div>

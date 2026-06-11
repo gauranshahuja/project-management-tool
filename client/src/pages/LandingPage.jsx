@@ -12,16 +12,33 @@ import "aos/dist/aos.css";
 import { FaArrowUp } from "react-icons/fa";
 import AuthModal from "../components/AuthModal"; // import the modal
 
-const LandingPage = () => {
-  const [showAuthModal, setShowAuthModal] = useState(false);
+const LandingPage = ({ showAuth = false }) => {
+  const [showAuthModal, setShowAuthModal] = useState(showAuth);
   const [authMode, setAuthMode] = useState("login"); // can be "login" or "register"
 
   useEffect(() => {
     AOS.init({ duration: 1000 });
   }, []);
 
+  useEffect(() => {
+    if (showAuth) {
+      setAuthMode("login");
+      setShowAuthModal(true);
+    }
+  }, [showAuth]);
+
   const handleGetStarted = () => {
     setAuthMode("login");
+    setShowAuthModal(true);
+  };
+
+  const handleLogin = () => {
+    setAuthMode("login");
+    setShowAuthModal(true);
+  };
+
+  const handleRegister = () => {
+    setAuthMode("register");
     setShowAuthModal(true);
   };
 
@@ -30,7 +47,7 @@ const LandingPage = () => {
       {/* Main Content */}
       <div className="relative z-50">
         <div id="top" />
-        <Navbar />
+        <Navbar onLogin={handleLogin} onRegister={handleRegister} />
 
         {/* Hero Section */}
         <section className="min-h-screen flex flex-col justify-center items-center text-center px-6 pt-32">

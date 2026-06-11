@@ -4,7 +4,9 @@ import {
   getAuth,
   GoogleAuthProvider,
   GithubAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  fetchSignInMethodsForEmail,
+  linkWithCredential
 } from "firebase/auth";
 
 // Firebase configuration

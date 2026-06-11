@@ -7,6 +7,7 @@ require('dotenv').config();
 const userRoutes = require('./routes/userRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const taskRoutes = require('./routes/taskRoutes');
+const orgRoutes = require('./routes/orgRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -19,7 +20,8 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    const isLocalhost = origin && /^http:\/\/localhost:\d+$/.test(origin);
+    if (!origin || isLocalhost || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
@@ -42,6 +44,9 @@ app.use('/api/projects', projectRoutes);
 
 // Task routes (mounted cleanly!)
 app.use('/api/tasks', taskRoutes);
+
+// Organization routes (members, invites, roles)
+app.use('/api/org', orgRoutes);
 
 // Central error handler (sab errors -> { error }). Routes ke baad hona zaroori hai.
 app.use(errorHandler);

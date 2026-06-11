@@ -14,6 +14,18 @@ const userSchema = new mongoose.Schema(
       ],
     },
     password: { type: String, required: true, minlength: 6 },
+    organization: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Organization',
+    },
+    role: {
+      type: String,
+      enum: ['Owner', 'Admin', 'Manager', 'Member'],
+      default: 'Member',
+    },
+    avatar: { type: String, default: '' },
+    isOAuth: { type: Boolean, default: false },
+    authProvider: { type: String, default: '' },
   },
   { timestamps: true }
 );
