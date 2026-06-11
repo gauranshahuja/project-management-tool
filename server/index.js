@@ -1,6 +1,8 @@
 ﻿const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 // Import routes
@@ -30,7 +32,20 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(express.json());
+app.use(helmet());
+app.use(express.json({ limit: '1mb' }));
+
+// Auth endpoints par brute-force protection
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 50,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many attempts, please try again later' },
+});
+app.use('/api/users/login', authLimiter);
+app.use('/api/users/register', authLimiter);
+app.use('/api/users/social-login', authLimiter);
 
 // Basic test routes
 app.get('/', (req, res) => res.send('API Running...'));
