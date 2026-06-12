@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   FiArrowLeft,
@@ -22,6 +22,7 @@ const emptyTaskForm = {
   description: "",
   status: "Not Started",
   dueDate: "",
+  assignedTo: "",
 };
 
 const getErrorMessage = (err, fallback) =>
@@ -62,6 +63,12 @@ const createTaskPayload = (form, options = {}) => {
     payload.dueDate = null;
   }
 
+  if (form.assignedTo) {
+    payload.assignedTo = form.assignedTo;
+  } else if (options.includeEmptyAssignee) {
+    payload.assignedTo = null;
+  }
+
   return payload;
 };
 
@@ -81,6 +88,7 @@ const ProjectDetail = () => {
 
   const [project, setProject] = useState(location.state?.project || null);
   const [tasks, setTasks] = useState([]);
+  const [members, setMembers] = useState([]);
   const [stats, setStats] = useState({});
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -240,6 +248,16 @@ const ProjectDetail = () => {
     loadProject();
   }, [loadProject]);
 
+  // Org members ek baar load karo — assignee dropdown ke liye
+  useEffect(() => {
+    if (!getStoredUser()?.token) return;
+
+    axios
+      .get("/org/members")
+      .then((res) => setMembers(res.data))
+      .catch(() => setMembers([]));
+  }, []);
+
   useEffect(() => {
     loadStats();
   }, [loadStats]);
@@ -307,6 +325,7 @@ const ProjectDetail = () => {
       description: task.description || "",
       status: task.status || "Not Started",
       dueDate: toDateInputValue(task.dueDate),
+      assignedTo: task.assignedTo?._id || task.assignedTo || "",
     });
     setNotice("");
     setError("");
@@ -321,7 +340,10 @@ const ProjectDetail = () => {
     setError("");
     setNotice("");
 
-    const payload = createTaskPayload(editForm, { includeEmptyDueDate: true });
+    const payload = createTaskPayload(editForm, {
+      includeEmptyDueDate: true,
+      includeEmptyAssignee: true,
+    });
     if (!payload.title) {
       setError("Task title is required.");
       return;
@@ -439,7 +461,7 @@ const ProjectDetail = () => {
           </h2>
           <form
             onSubmit={handleCreateTask}
-            className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_180px_170px_auto]"
+            className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_150px_160px_150px_auto]"
           >
             <input
               type="text"
@@ -480,6 +502,20 @@ const ProjectDetail = () => {
               disabled={!isProjectReady || savingTask}
               className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:border-gray-700 dark:bg-gray-950 dark:text-white dark:disabled:bg-gray-800 dark:disabled:text-gray-500 dark:focus:ring-emerald-950"
             />
+            <select
+              name="assignedTo"
+              value={taskForm.assignedTo}
+              onChange={handleTaskFormChange}
+              disabled={!isProjectReady || savingTask}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:border-gray-700 dark:bg-gray-950 dark:text-white dark:disabled:bg-gray-800 dark:disabled:text-gray-500 dark:focus:ring-emerald-950"
+            >
+              <option value="">Unassigned</option>
+              {members.map((member) => (
+                <option key={member.id} value={member.id}>
+                  {member.name}
+                </option>
+              ))}
+            </select>
             <button
               type="submit"
               disabled={!isProjectReady || savingTask}
@@ -554,7 +590,7 @@ const ProjectDetail = () => {
                 return (
                   <div key={task._id} className="p-4">
                     {isEditing ? (
-                      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_180px_170px_auto_auto]">
+                      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_150px_160px_150px_auto_auto]">
                         <input
                           type="text"
                           name="title"
@@ -588,6 +624,19 @@ const ProjectDetail = () => {
                           onChange={handleEditFormChange}
                           className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:border-gray-700 dark:bg-gray-950 dark:text-white dark:focus:ring-emerald-950"
                         />
+                        <select
+                          name="assignedTo"
+                          value={editForm.assignedTo}
+                          onChange={handleEditFormChange}
+                          className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:border-gray-700 dark:bg-gray-950 dark:text-white dark:focus:ring-emerald-950"
+                        >
+                          <option value="">Unassigned</option>
+                          {members.map((member) => (
+                            <option key={member.id} value={member.id}>
+                              {member.name}
+                            </option>
+                          ))}
+                        </select>
                         <button
                           type="button"
                           onClick={() => saveTask(task._id)}
@@ -627,6 +676,11 @@ const ProjectDetail = () => {
                           )}
                           <p className="mt-2 text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
                             {formatDate(task.dueDate)}
+                            {task.assignedTo?.name && (
+                              <span className="ml-2 normal-case tracking-normal text-indigo-500 dark:text-indigo-300">
+                                @ {task.assignedTo.name}
+                              </span>
+                            )}
                           </p>
                         </div>
 

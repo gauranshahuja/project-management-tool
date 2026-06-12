@@ -1,93 +1,175 @@
-# project-management-tool
+# ProjectHub — Multi-Tenant Project Management SaaS
 
+A full-stack, multi-tenant project management platform where companies run their projects,
+teams, and tasks in isolated workspaces. Built with the MERN stack (MongoDB, Express 5,
+React 19, Node.js) with role-based access control and an invite-based onboarding flow.
 
+**Live demo:** [managementtool.netlify.app](https://managementtool.netlify.app) ·
+**API:** [Render](https://project-management-tool-9yl1.onrender.com)
+
+---
+
+## Features
+
+### Multi-tenant SaaS core
+- **Organizations (workspaces):** signing up with a company name creates an isolated
+  workspace; the first user becomes its Owner. All data is scoped per organization.
+- **Invite-based onboarding:** Owners/Admins generate role-scoped invite links
+  (7-day expiry). Invitees land on a join page, see who invited them, and register
+  directly into the right company with the right role.
+- **Role-based access control** with four fixed roles, enforced server-side on every
+  route and mirrored in the UI:
+
+  | Capability                          | Owner | Admin | Manager | Member |
+  | ----------------------------------- | :---: | :---: | :-----: | :----: |
+  | See all org projects                | ✓     | ✓     | own/member | own/member |
+  | Create projects                     | ✓     | ✓     | ✓       | —      |
+  | Invite teammates                    | ✓     | ✓     | —       | —      |
+  | Invite/manage Admins                | ✓     | —     | —       | —      |
+  | Change member roles / remove members| ✓     | ✓*    | —       | —      |
+  | Update assigned tasks               | ✓     | ✓     | ✓       | ✓      |
+
+  \* Admins cannot manage other Admins — only the Owner can.
+
+### Project & task management
+- Projects with status, due dates, descriptions, and member assignment.
+- Task workspace per project: create, inline-edit, delete, assign to teammates,
+  with search, status filters, pagination, and live status statistics.
+- **My Tasks:** a cross-project view of everything assigned to you, with one-click
+  status updates.
+
+### Authentication
+- Email/password auth with bcrypt hashing and JWT sessions.
+- Social login (Google & GitHub) via Firebase, including cross-provider
+  account linking.
+- Legacy single-user accounts self-heal into personal workspaces on login.
+
+### Engineering quality
+- Centralized Express error handler with a consistent `{ error }` response shape.
+- Security middleware: `helmet` headers and rate-limited auth endpoints.
+- Role middleware (`requireRole`) and per-resource ownership checks.
+- Zero-setup local development via an in-memory MongoDB (`npm run dev:memory`).
+- Dark mode, responsive layout, accessible controls.
+
+---
+
+## Tech stack
+
+| Layer      | Technology |
+| ---------- | ---------- |
+| Frontend   | React 19, Vite 7, Tailwind CSS, React Router 7, Axios, Framer Motion |
+| Backend    | Node.js, Express 5, Mongoose 8 |
+| Database   | MongoDB (Atlas in production, in-memory server for local dev) |
+| Auth       | JWT, bcrypt, Firebase Auth (social login) |
+| Security   | helmet, express-rate-limit, role-based middleware |
+| Deployment | Netlify (client) · Render (API) |
+
+---
+
+## Architecture
+
+```
+client/                      server/
+├── pages/                   ├── models/        User, Organization, Invite,
+│   ├── LandingPage          │                  Project, Task
+│   ├── Dashboard            ├── controllers/   user, org, project, task
+│   ├── ProjectDetail        ├── middleware/    auth (JWT), requireRole,
+│   ├── Members              │                  errorHandler
+│   ├── MyTasks              ├── routes/        /api/users, /api/org,
+│   └── JoinPage             │                  /api/projects, /api/tasks
+├── components/              └── utils/         asyncHandler, generateToken
+└── services/axiosInstance   
+```
+
+- The client talks to the API through a single Axios instance with a request
+  interceptor (attaches JWT) and a response interceptor (auto-logout on 401).
+- Every authenticated request loads the user fresh from the database, so role
+  changes take effect immediately without re-login.
+- Multi-tenancy is enforced at the query level: every project/task read or write
+  is scoped to the requester's organization and role.
+
+---
 
 ## Getting started
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+### Prerequisites
+- Node.js 18+
+- npm
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+### 1. Clone and install
 
-## Add your files
+```bash
+git clone <repo-url>
+cd project-management-tool
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.com/gauranshahuja-group/project-management-tool.git
-git branch -M main
-git push -uf origin main
+cd server && npm install
+cd ../client && npm install
 ```
 
-## Integrate with your tools
+### 2. Configure environment
 
-- [ ] [Set up project integrations](https://gitlab.com/gauranshahuja-group/project-management-tool/-/settings/integrations)
+`server/.env`:
 
-## Collaborate with your team
+```env
+MONGO_URI=<your MongoDB connection string>   # not needed for dev:memory
+JWT_SECRET=<a long random string>
+PORT=5000
+```
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+`client/.env` (optional — defaults to the Vite proxy):
 
-## Test and Deploy
+```env
+VITE_API_BASE_URL=/api
+```
 
-Use the built-in continuous integration in GitLab.
+### 3. Run locally
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+**Zero-setup mode (no MongoDB required):**
 
-***
+```bash
+# Terminal 1 — API with in-memory MongoDB
+cd server
+npm run dev:memory
 
-# Editing this README
+# Terminal 2 — React client
+cd client
+npm run dev
+```
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+Open http://localhost:5173, register with a company name, and explore.
+Note: in-memory data resets when the server restarts.
 
-## Suggestions for a good README
+**With a real MongoDB:** set `MONGO_URI` in `server/.env` and use `npm run dev` instead.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+---
 
-## Name
-Choose a self-explaining name for your project.
+## API overview
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+All endpoints are prefixed with `/api`. Protected routes require
+`Authorization: Bearer <jwt>`.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+| Area | Endpoints |
+| ---- | --------- |
+| Auth | `POST /users/register` · `POST /users/login` · `POST /users/social-login` · `GET /users/profile` |
+| Organization | `GET /org` · `GET /org/members` · `POST /org/invites` · `GET /org/invites` · `DELETE /org/invites/:id` · `GET /org/invites/info?token=` (public) · `PATCH /org/members/:id/role` · `DELETE /org/members/:id` |
+| Projects | `GET /projects` · `POST /projects` · `PUT /projects/:id` · `DELETE /projects/:id` |
+| Tasks | `GET /tasks/project/:projectId` (paginated, searchable) · `GET /tasks/project/:projectId/stats` · `POST /tasks/project/:projectId` · `PUT /tasks/:id` · `DELETE /tasks/:id` · `GET /tasks/me` |
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+Errors always return `{ "error": "<message>" }` with appropriate status codes
+(400 validation, 401 unauthenticated, 403 forbidden, 404 not found).
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+---
 
 ## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+- [ ] Email delivery for invites (currently link-sharing)
+- [ ] HR module: employee records, attendance, leave tracking
+- [ ] Activity feed and notifications
+- [ ] Custom roles and granular permissions
+- [ ] Billing and subscription tiers
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+---
 
 ## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+MIT

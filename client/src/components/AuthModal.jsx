@@ -18,7 +18,12 @@ import { FiX } from "react-icons/fi";
 
 const AuthModal = ({ mode = "login", onClose }) => {
   const [authMode, setAuthMode] = useState(mode);
-  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    organizationName: "",
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -57,7 +62,17 @@ const AuthModal = ({ mode = "login", onClose }) => {
     const endpoint = isLogin ? "/users/login" : "/users/register";
 
     try {
-      const response = await axios.post(endpoint, formData);
+      const payload = isLogin
+        ? { email: formData.email, password: formData.password }
+        : {
+            name: formData.name,
+            email: formData.email,
+            password: formData.password,
+            ...(formData.organizationName.trim()
+              ? { organizationName: formData.organizationName.trim() }
+              : {}),
+          };
+      const response = await axios.post(endpoint, payload);
       saveAuthResponse(response);
       onClose();
       window.location.href = "/dashboard";
@@ -162,15 +177,31 @@ const AuthModal = ({ mode = "login", onClose }) => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
-            <input
-              type="text"
-              name="name"
-              placeholder="Name"
-              required
-              value={formData.name}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2 border rounded dark:bg-gray-800 dark:text-white"
-            />
+            <>
+              <input
+                type="text"
+                name="name"
+                placeholder="Name"
+                required
+                value={formData.name}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 border rounded dark:bg-gray-800 dark:text-white"
+              />
+              <div>
+                <input
+                  type="text"
+                  name="organizationName"
+                  placeholder="Company name (optional)"
+                  value={formData.organizationName}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border rounded dark:bg-gray-800 dark:text-white"
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Creates your company workspace — you become the Owner. Leave
+                  blank for a personal workspace.
+                </p>
+              </div>
+            </>
           )}
           <input
             type="email"
