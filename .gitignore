@@ -2,7 +2,15 @@ node_modules/
 client/node_modules/
 server/node_modules/
 .env
+.env.local
+server/.env
+client/.env
 dist/
+
+# Secrets / service-account keys — kabhi push na ho
+*firebase-adminsdk*.json
+*serviceAccount*.json
+*.pem
 
 # AI collaboration / internal notes & tooling — kabhi push na ho
 API_CONTRACT.md
