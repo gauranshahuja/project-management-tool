@@ -47,9 +47,15 @@ app.use('/api/users/login', authLimiter);
 app.use('/api/users/register', authLimiter);
 app.use('/api/users/social-login', authLimiter);
 
-// Basic test routes
+// Health check (uptime monitors / deploy platforms)
 app.get('/', (req, res) => res.send('API Running...'));
-app.get('/api/test', (req, res) => res.json({ message: 'Hello from backend!' }));
+app.get('/api/health', (req, res) =>
+  res.json({
+    status: 'ok',
+    db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    uptime: process.uptime(),
+  })
+);
 
 // User auth routes
 app.use('/api/users', userRoutes);
@@ -62,6 +68,11 @@ app.use('/api/tasks', taskRoutes);
 
 // Organization routes (members, invites, roles)
 app.use('/api/org', orgRoutes);
+
+// Unknown API routes -> consistent { error }
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
 
 // Central error handler (sab errors -> { error }). Routes ke baad hona zaroori hai.
 app.use(errorHandler);
