@@ -5,6 +5,7 @@ const Project = require('../models/project');
 const Task = require('../models/Task');
 const generateToken = require('../utils/generateToken');
 const asyncHandler = require('../utils/asyncHandler');
+const logActivity = require('../utils/logActivity');
 const admin = require('../utils/firebaseAdmin');
 
 // Auth response ek hi shape me sab jagah se jaye
@@ -110,6 +111,10 @@ const registerUser = asyncHandler(async (req, res) => {
 
   user.organization = organization._id;
   await user.save();
+
+  if (invite) {
+    logActivity(user, 'member.joined', `${name} joined the team as ${role}`);
+  }
 
   res.status(201).json(buildAuthResponse('User registered successfully', user, organization));
 });

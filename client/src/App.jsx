@@ -5,6 +5,8 @@ import ProjectDetail from "./pages/ProjectDetail";
 import Members from "./pages/Members";
 import MyTasks from "./pages/MyTasks";
 import JoinPage from "./pages/JoinPage";
+import Activity from "./pages/Activity";
+import Analytics from "./pages/Analytics";
 import { getStoredUser } from "./utils/authStorage";
 
 const ProtectedRoute = ({ children }) => {
@@ -52,6 +54,22 @@ const App = () => {
         element={
           <ProtectedRoute>
             <MyTasks />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            <Analytics />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/activity"
+        element={
+          <ProtectedRoute>
+            <Activity />
           </ProtectedRoute>
         }
       />

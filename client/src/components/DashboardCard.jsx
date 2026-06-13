@@ -25,6 +25,8 @@ const formatDate = (value) => {
 const DashboardCard = ({ project, onClick, onEdit, onDelete }) => {
   const handleActionClick = (e, action) => {
     e.stopPropagation();
+    if (!action) return;
+
     action(project);
   };
 
@@ -37,24 +39,30 @@ const DashboardCard = ({ project, onClick, onEdit, onDelete }) => {
         <h2 className="break-words text-xl font-semibold text-gray-800 dark:text-white">
           {project.title}
         </h2>
-        <div className="flex shrink-0 gap-2">
-          <button
-            type="button"
-            onClick={(e) => handleActionClick(e, onEdit)}
-            className="rounded-md p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
-            aria-label={`Edit ${project.title}`}
-          >
-            <FiEdit2 aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => handleActionClick(e, onDelete)}
-            className="rounded-md p-2 text-red-500 transition hover:bg-red-50 hover:text-red-700 dark:text-red-300 dark:hover:bg-red-950 dark:hover:text-red-100"
-            aria-label={`Delete ${project.title}`}
-          >
-            <FiTrash2 aria-hidden="true" />
-          </button>
-        </div>
+        {(onEdit || onDelete) && (
+          <div className="flex shrink-0 gap-2">
+            {onEdit && (
+              <button
+                type="button"
+                onClick={(e) => handleActionClick(e, onEdit)}
+                className="rounded-md p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
+                aria-label={`Edit ${project.title}`}
+              >
+                <FiEdit2 aria-hidden="true" />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={(e) => handleActionClick(e, onDelete)}
+                className="rounded-md p-2 text-red-500 transition hover:bg-red-50 hover:text-red-700 dark:text-red-300 dark:hover:bg-red-950 dark:hover:text-red-100"
+                aria-label={`Delete ${project.title}`}
+              >
+                <FiTrash2 aria-hidden="true" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <p className="mt-3 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-gray-600 dark:text-gray-300">

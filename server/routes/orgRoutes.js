@@ -9,6 +9,8 @@ const {
   getInviteInfo,
   changeMemberRole,
   removeMember,
+  getAnalytics,
+  getActivity,
 } = require('../controllers/orgController');
 const { protect } = require('../middleware/authMiddleware');
 const requireRole = require('../middleware/requireRole');
@@ -19,6 +21,8 @@ router.get('/invites/info', getInviteInfo);
 // Org info + members (koi bhi member)
 router.get('/', protect, getOrganization);
 router.get('/members', protect, getMembers);
+router.get('/analytics', protect, getAnalytics);
+router.get('/activity', protect, getActivity);
 
 // Invites (Owner/Admin)
 router

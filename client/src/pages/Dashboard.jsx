@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../services/axiosInstance";
 import { getStoredUser } from "../utils/authStorage";
-import { FiPlus, FiX } from "react-icons/fi";
+import { FiPlus, FiUsers, FiX } from "react-icons/fi";
 import DashboardCard from "../components/DashboardCard";
 import Navbar_Dashboard from "../components/Navbar_dashboard";
 
@@ -14,7 +14,10 @@ const emptyProjectForm = {
   description: "",
   status: "Not Started",
   dueDate: "",
+  members: [],
 };
+
+const getMemberId = (member) => member?.id || member?._id || member;
 
 const toDateInputValue = (value) => {
   if (!value) return "";
@@ -32,6 +35,10 @@ const createProjectPayload = (form, options = {}) => {
     status: form.status,
   };
 
+  if (Array.isArray(form.members)) {
+    payload.members = form.members;
+  }
+
   if (form.dueDate) {
     payload.dueDate = form.dueDate;
   } else if (options.includeEmptyDueDate) {
@@ -47,10 +54,12 @@ const Dashboard = () => {
   const [modalMode, setModalMode] = useState("create");
   const [editingProjectId, setEditingProjectId] = useState(null);
   const [form, setForm] = useState(emptyProjectForm);
+  const [orgMembers, setOrgMembers] = useState([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  // Member role projects create nahi kar sakta (backend bhi 403 deta hai)
-  const canCreateProject = getStoredUser()?.role !== "Member";
+  const currentUser = getStoredUser();
+  const canCreateProject = currentUser?.role !== "Member";
 
   const getErrorMessage = (err, fallback) =>
     err.response?.data?.error || err.response?.data?.message || fallback;
@@ -71,10 +80,28 @@ const Dashboard = () => {
         console.error("Failed to fetch projects:", err.response?.data || err.message);
         setError(getErrorMessage(err, "Failed to fetch projects"));
       });
+
+    setLoadingMembers(true);
+    axios
+      .get("/org/members")
+      .then((res) => setOrgMembers(res.data || []))
+      .catch(() => setOrgMembers([]))
+      .finally(() => setLoadingMembers(false));
   }, [navigate]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleMemberToggle = (memberId) => {
+    setForm((prev) => {
+      const members = prev.members || [];
+      const nextMembers = members.includes(memberId)
+        ? members.filter((id) => id !== memberId)
+        : [...members, memberId];
+
+      return { ...prev, members: nextMembers };
+    });
   };
 
   const openCreateModal = () => {
@@ -93,6 +120,7 @@ const Dashboard = () => {
       description: project.description || "",
       status: project.status || "Not Started",
       dueDate: toDateInputValue(project.dueDate),
+      members: (project.members || []).map(getMemberId).filter(Boolean),
     });
     setError("");
     setShowModal(true);
@@ -208,8 +236,8 @@ const Dashboard = () => {
                 onClick={() =>
                   navigate(`/projects/${project._id}`, { state: { project } })
                 }
-                onEdit={openEditModal}
-                onDelete={handleDeleteProject}
+                onEdit={canCreateProject ? openEditModal : undefined}
+                onDelete={canCreateProject ? handleDeleteProject : undefined}
               />
             ))}
           </div>
@@ -267,6 +295,57 @@ const Dashboard = () => {
                 onChange={handleChange}
                 className="w-full px-4 py-2 border rounded dark:bg-gray-800 dark:text-white"
               />
+              {canCreateProject && (
+                <div className="rounded border border-gray-200 p-3 dark:border-gray-700">
+                  <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    <FiUsers aria-hidden="true" />
+                    Project members
+                  </div>
+                  {loadingMembers ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Loading teammates...
+                    </p>
+                  ) : orgMembers.length === 0 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      No teammates available.
+                    </p>
+                  ) : (
+                    <div className="max-h-40 space-y-2 overflow-y-auto pr-1">
+                      {orgMembers.map((member) => {
+                        const memberId = getMemberId(member);
+                        const checked = form.members.includes(memberId);
+
+                        return (
+                          <label
+                            key={memberId}
+                            className="flex cursor-pointer items-start gap-2 rounded px-2 py-1 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => handleMemberToggle(memberId)}
+                              className="mt-1"
+                            />
+                            <span className="min-w-0">
+                              <span className="block break-words font-medium">
+                                {member.name || member.email}
+                                {memberId === currentUser?.id && (
+                                  <span className="ml-1 text-xs text-gray-400">
+                                    (you)
+                                  </span>
+                                )}
+                              </span>
+                              <span className="block break-words text-xs text-gray-500 dark:text-gray-400">
+                                {member.email} {member.role ? `- ${member.role}` : ""}
+                              </span>
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
               <button
                 type="submit"
                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded"

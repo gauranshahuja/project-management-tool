@@ -60,6 +60,12 @@ const Navbar_Dashboard = () => {
           <NavLink to="/my-tasks" className={navLinkClasses}>
             My Tasks
           </NavLink>
+          <NavLink to="/analytics" className={navLinkClasses}>
+            Overview
+          </NavLink>
+          <NavLink to="/activity" className={navLinkClasses}>
+            Activity
+          </NavLink>
           <NavLink to="/members" className={navLinkClasses}>
             Team
           </NavLink>
@@ -111,6 +117,20 @@ const Navbar_Dashboard = () => {
                   onClick={() => setDropdownOpen(false)}
                 >
                   My Tasks
+                </NavLink>
+                <NavLink
+                  to="/analytics"
+                  className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  onClick={() => setDropdownOpen(false)}
+                >
+                  Overview
+                </NavLink>
+                <NavLink
+                  to="/activity"
+                  className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  onClick={() => setDropdownOpen(false)}
+                >
+                  Activity
                 </NavLink>
                 <NavLink
                   to="/members"

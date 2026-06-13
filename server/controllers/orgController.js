@@ -1,8 +1,13 @@
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const Organization = require('../models/Organization');
 const Invite = require('../models/Invite');
+const Project = require('../models/project');
+const Task = require('../models/Task');
+const Activity = require('../models/Activity');
 const asyncHandler = require('../utils/asyncHandler');
+const logActivity = require('../utils/logActivity');
 
 const INVITE_EXPIRY_DAYS = 7;
 
@@ -99,6 +104,8 @@ exports.createInvite = asyncHandler(async (req, res) => {
     expiresAt: new Date(Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000),
   });
 
+  logActivity(req.user, 'invite.created', `invited ${email} as ${role}`);
+
   res.status(201).json(inviteShape(invite));
 });
 
@@ -191,6 +198,8 @@ exports.changeMemberRole = asyncHandler(async (req, res) => {
   target.role = role;
   await target.save();
 
+  logActivity(req.user, 'member.role_changed', `changed ${target.name}'s role to ${role}`);
+
   res.json(memberShape(target));
 });
 
@@ -220,9 +229,110 @@ exports.removeMember = asyncHandler(async (req, res) => {
   }
 
   // Member ko nikalne par uska apna personal workspace ban jayega agle login par
+  const removedName = target.name;
   target.organization = undefined;
   target.role = 'Member';
   await target.save();
 
+  logActivity(req.user, 'member.removed', `removed ${removedName} from the team`);
+
   res.json({ message: 'Member removed from organization' });
+});
+
+// @desc    Org-wide analytics overview
+// @route   GET /api/org/analytics
+// @access  Private (koi bhi member)
+exports.getAnalytics = asyncHandler(async (req, res) => {
+  const orgId = new mongoose.Types.ObjectId(req.user.organization);
+
+  const [
+    projectCount,
+    memberCount,
+    taskByStatus,
+    taskByPriority,
+    overdueCount,
+    topAssignees,
+  ] = await Promise.all([
+    Project.countDocuments({ organization: orgId }),
+    User.countDocuments({ organization: orgId }),
+    Task.aggregate([
+      { $match: { organization: orgId } },
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+    ]),
+    Task.aggregate([
+      { $match: { organization: orgId } },
+      { $group: { _id: '$priority', count: { $sum: 1 } } },
+    ]),
+    Task.countDocuments({
+      organization: orgId,
+      status: { $ne: 'Completed' },
+      dueDate: { $ne: null, $lt: new Date() },
+    }),
+    Task.aggregate([
+      { $match: { organization: orgId, assignedTo: { $ne: null } } },
+      { $group: { _id: '$assignedTo', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      { $unwind: '$user' },
+      { $project: { _id: 0, name: '$user.name', count: 1 } },
+    ]),
+  ]);
+
+  const toMap = (arr) =>
+    arr.reduce((acc, item) => {
+      acc[item._id || 'Unknown'] = item.count;
+      return acc;
+    }, {});
+
+  const statusMap = toMap(taskByStatus);
+  const totalTasks = Object.values(statusMap).reduce((a, b) => a + b, 0);
+
+  res.json({
+    projects: projectCount,
+    members: memberCount,
+    totalTasks,
+    overdueTasks: overdueCount,
+    tasksByStatus: {
+      'Not Started': statusMap['Not Started'] || 0,
+      'In Progress': statusMap['In Progress'] || 0,
+      Completed: statusMap['Completed'] || 0,
+    },
+    tasksByPriority: {
+      High: toMap(taskByPriority).High || 0,
+      Medium: toMap(taskByPriority).Medium || 0,
+      Low: toMap(taskByPriority).Low || 0,
+    },
+    topAssignees,
+  });
+});
+
+// @desc    Org activity feed (audit log)
+// @route   GET /api/org/activity?limit=
+// @access  Private (koi bhi member)
+exports.getActivity = asyncHandler(async (req, res) => {
+  const limit = Math.min(Math.max(parseInt(req.query.limit) || 30, 1), 100);
+
+  const activity = await Activity.find({ organization: req.user.organization })
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .lean();
+
+  res.json(
+    activity.map((a) => ({
+      id: a._id,
+      actorName: a.actorName,
+      action: a.action,
+      summary: a.summary,
+      entityType: a.entityType,
+      createdAt: a.createdAt,
+    }))
+  );
 });

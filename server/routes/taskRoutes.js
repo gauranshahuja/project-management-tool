@@ -7,12 +7,18 @@ const {
   deleteTask,
   getTaskStats,
   getMyTasks,
+  getComments,
+  addComment,
+  deleteComment,
 } = require('../controllers/taskController');
 const { protect } = require('../middleware/authMiddleware');
 
 // Task Routes (Nested under /api/tasks)
-// NOTE: '/me' ko '/:id' se pehle rakhna zaroori hai
+// NOTE: specific routes ko '/:id' se pehle rakhna zaroori hai
 router.get('/me', protect, getMyTasks); // Mere assigned tasks (org-wide)
+
+// Comment delete (commentId path — task id ke saath collide na ho isliye /comments/ prefix)
+router.delete('/comments/:commentId', protect, deleteComment);
 
 router.route('/project/:projectId')
   .get(protect, getTasks)       // GET tasks with pagination, search, filter
@@ -20,6 +26,10 @@ router.route('/project/:projectId')
 
 router.route('/project/:projectId/stats')
   .get(protect, getTaskStats);  // Get task stats by status
+
+router.route('/:id/comments')
+  .get(protect, getComments)    // List comments for a task
+  .post(protect, addComment);   // Add a comment
 
 router.route('/:id')
   .put(protect, updateTask)     // Update task by task ID

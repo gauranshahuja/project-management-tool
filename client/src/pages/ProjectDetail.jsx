@@ -4,9 +4,11 @@ import {
   FiArrowLeft,
   FiCheck,
   FiEdit2,
+  FiMessageSquare,
   FiRefreshCw,
   FiSave,
   FiSearch,
+  FiSend,
   FiTrash2,
   FiX,
 } from "react-icons/fi";
@@ -17,12 +19,22 @@ import { getStoredUser } from "../utils/authStorage";
 const STATUS_OPTIONS = ["Not Started", "In Progress", "Completed"];
 const PAGE_SIZE = 8;
 
+const STATUS_PRIORITIES = ["Low", "Medium", "High"];
+
 const emptyTaskForm = {
   title: "",
   description: "",
   status: "Not Started",
+  priority: "Medium",
   dueDate: "",
   assignedTo: "",
+};
+
+const priorityClasses = {
+  High: "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-200",
+  Medium:
+    "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200",
+  Low: "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-200",
 };
 
 const getErrorMessage = (err, fallback) =>
@@ -50,6 +62,23 @@ const formatDate = (value) => {
   }).format(date);
 };
 
+const formatDateTime = (value) => {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+};
+
+const getAuthorId = (comment) =>
+  comment.author?._id || comment.author?.id || comment.author;
+
 const createTaskPayload = (form, options = {}) => {
   const payload = {
     title: form.title.trim(),
@@ -69,6 +98,10 @@ const createTaskPayload = (form, options = {}) => {
     payload.assignedTo = null;
   }
 
+  if (form.priority) {
+    payload.priority = form.priority;
+  }
+
   return payload;
 };
 
@@ -85,10 +118,16 @@ const ProjectDetail = () => {
   const { projectId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const currentUser = getStoredUser();
 
   const [project, setProject] = useState(location.state?.project || null);
   const [tasks, setTasks] = useState([]);
   const [members, setMembers] = useState([]);
+  const [commentsByTask, setCommentsByTask] = useState({});
+  const [commentsLoading, setCommentsLoading] = useState({});
+  const [commentDrafts, setCommentDrafts] = useState({});
+  const [openCommentsTaskId, setOpenCommentsTaskId] = useState(null);
+  const [savingCommentTaskId, setSavingCommentTaskId] = useState(null);
   const [stats, setStats] = useState({});
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -118,6 +157,13 @@ const ProjectDetail = () => {
     [stats]
   );
   const isProjectReady = !loadingProject && !projectLoadFailed && Boolean(project);
+  const canDeleteComment = useCallback(
+    (comment) =>
+      ["Owner", "Admin"].includes(currentUser?.role) ||
+      getAuthorId(comment) === currentUser?.id ||
+      getAuthorId(comment) === currentUser?._id,
+    [currentUser?.id, currentUser?._id, currentUser?.role]
+  );
 
   const requireAuth = useCallback(() => {
     if (!getStoredUser()?.token) {
@@ -131,6 +177,11 @@ const ProjectDetail = () => {
   const resetTaskState = useCallback(() => {
     setTasks([]);
     setStats({});
+    setCommentsByTask({});
+    setCommentsLoading({});
+    setCommentDrafts({});
+    setOpenCommentsTaskId(null);
+    setSavingCommentTaskId(null);
     setCurrentPage(1);
     setPagination({
       currentPage: 1,
@@ -272,6 +323,75 @@ const ProjectDetail = () => {
     await Promise.all([loadTasks(page), loadStats()]);
   };
 
+  const loadComments = useCallback(async (taskId) => {
+    setCommentsLoading((prev) => ({ ...prev, [taskId]: true }));
+    setError("");
+
+    try {
+      const res = await axios.get(`/tasks/${taskId}/comments`);
+      setCommentsByTask((prev) => ({ ...prev, [taskId]: res.data || [] }));
+    } catch (err) {
+      console.error("Failed to load comments:", err.response?.data || err.message);
+      setError(getErrorMessage(err, "Failed to load comments"));
+    } finally {
+      setCommentsLoading((prev) => ({ ...prev, [taskId]: false }));
+    }
+  }, []);
+
+  const toggleComments = async (taskId) => {
+    const nextTaskId = openCommentsTaskId === taskId ? null : taskId;
+    setOpenCommentsTaskId(nextTaskId);
+
+    if (nextTaskId && !commentsByTask[nextTaskId]) {
+      await loadComments(nextTaskId);
+    }
+  };
+
+  const handleCommentDraftChange = (taskId, value) => {
+    setCommentDrafts((prev) => ({ ...prev, [taskId]: value }));
+  };
+
+  const addComment = async (taskId) => {
+    const body = (commentDrafts[taskId] || "").trim();
+    if (!body) return;
+
+    setSavingCommentTaskId(taskId);
+    setError("");
+    setNotice("");
+
+    try {
+      const res = await axios.post(`/tasks/${taskId}/comments`, { body });
+      setCommentsByTask((prev) => ({
+        ...prev,
+        [taskId]: [...(prev[taskId] || []), res.data],
+      }));
+      setCommentDrafts((prev) => ({ ...prev, [taskId]: "" }));
+    } catch (err) {
+      console.error("Comment creation error:", err.response?.data || err.message);
+      setError(getErrorMessage(err, "Failed to add comment"));
+    } finally {
+      setSavingCommentTaskId(null);
+    }
+  };
+
+  const deleteComment = async (taskId, comment) => {
+    if (!window.confirm("Delete this comment?")) return;
+
+    setError("");
+    setNotice("");
+
+    try {
+      await axios.delete(`/tasks/comments/${comment._id}`);
+      setCommentsByTask((prev) => ({
+        ...prev,
+        [taskId]: (prev[taskId] || []).filter((item) => item._id !== comment._id),
+      }));
+    } catch (err) {
+      console.error("Comment delete error:", err.response?.data || err.message);
+      setError(getErrorMessage(err, "Failed to delete comment"));
+    }
+  };
+
   const handleTaskFormChange = (e) => {
     const { name, value } = e.target;
     setTaskForm((prev) => ({ ...prev, [name]: value }));
@@ -324,6 +444,7 @@ const ProjectDetail = () => {
       title: task.title || "",
       description: task.description || "",
       status: task.status || "Not Started",
+      priority: task.priority || "Medium",
       dueDate: toDateInputValue(task.dueDate),
       assignedTo: task.assignedTo?._id || task.assignedTo || "",
     });
@@ -370,6 +491,17 @@ const ProjectDetail = () => {
     try {
       await axios.delete(`/tasks/${taskId}`);
       setNotice("Task deleted.");
+      setCommentsByTask((prev) => {
+        const next = { ...prev };
+        delete next[taskId];
+        return next;
+      });
+      setCommentDrafts((prev) => {
+        const next = { ...prev };
+        delete next[taskId];
+        return next;
+      });
+      setOpenCommentsTaskId((current) => (current === taskId ? null : current));
 
       if (tasks.length === 1 && currentPage > 1) {
         setCurrentPage((page) => page - 1);
@@ -461,7 +593,7 @@ const ProjectDetail = () => {
           </h2>
           <form
             onSubmit={handleCreateTask}
-            className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_150px_160px_150px_auto]"
+            className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_120px_150px_140px_auto]"
           >
             <input
               type="text"
@@ -491,6 +623,19 @@ const ProjectDetail = () => {
               {STATUS_OPTIONS.map((status) => (
                 <option key={status} value={status}>
                   {status}
+                </option>
+              ))}
+            </select>
+            <select
+              name="priority"
+              value={taskForm.priority}
+              onChange={handleTaskFormChange}
+              disabled={!isProjectReady || savingTask}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:border-gray-700 dark:bg-gray-950 dark:text-white dark:disabled:bg-gray-800 dark:disabled:text-gray-500 dark:focus:ring-emerald-950"
+            >
+              {STATUS_PRIORITIES.map((p) => (
+                <option key={p} value={p}>
+                  {p}
                 </option>
               ))}
             </select>
@@ -590,7 +735,7 @@ const ProjectDetail = () => {
                 return (
                   <div key={task._id} className="p-4">
                     {isEditing ? (
-                      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_150px_160px_150px_auto_auto]">
+                      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_120px_150px_140px_auto_auto]">
                         <input
                           type="text"
                           name="title"
@@ -614,6 +759,18 @@ const ProjectDetail = () => {
                           {STATUS_OPTIONS.map((status) => (
                             <option key={status} value={status}>
                               {status}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          name="priority"
+                          value={editForm.priority}
+                          onChange={handleEditFormChange}
+                          className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:border-gray-700 dark:bg-gray-950 dark:text-white dark:focus:ring-emerald-950"
+                        >
+                          {STATUS_PRIORITIES.map((p) => (
+                            <option key={p} value={p}>
+                              {p}
                             </option>
                           ))}
                         </select>
@@ -655,6 +812,7 @@ const ProjectDetail = () => {
                         </button>
                       </div>
                     ) : (
+                      <>
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
@@ -667,6 +825,13 @@ const ProjectDetail = () => {
                               }`}
                             >
                               {task.status || "Not Started"}
+                            </span>
+                            <span
+                              className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
+                                priorityClasses[task.priority] || priorityClasses.Medium
+                              }`}
+                            >
+                              {task.priority || "Medium"}
                             </span>
                           </div>
                           {task.description && (
@@ -684,7 +849,15 @@ const ProjectDetail = () => {
                           </p>
                         </div>
 
-                        <div className="flex shrink-0 gap-2">
+                        <div className="flex shrink-0 flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => toggleComments(task._id)}
+                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                          >
+                            <FiMessageSquare aria-hidden="true" />
+                            Comments
+                          </button>
                           <button
                             type="button"
                             onClick={() => startEditing(task)}
@@ -703,6 +876,80 @@ const ProjectDetail = () => {
                           </button>
                         </div>
                       </div>
+                      {openCommentsTaskId === task._id && (
+                        <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950">
+                          {commentsLoading[task._id] ? (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              Loading comments...
+                            </p>
+                          ) : (commentsByTask[task._id] || []).length === 0 ? (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              No comments yet.
+                            </p>
+                          ) : (
+                            <div className="space-y-3">
+                              {(commentsByTask[task._id] || []).map((comment) => (
+                                <div
+                                  key={comment._id}
+                                  className="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900"
+                                >
+                                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                    <div className="min-w-0">
+                                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                        {comment.author?.name || "Team member"}
+                                        {comment.createdAt && (
+                                          <span className="ml-2 text-xs font-normal text-gray-400">
+                                            {formatDateTime(comment.createdAt)}
+                                          </span>
+                                        )}
+                                      </p>
+                                      <p className="mt-1 break-words text-sm text-gray-600 dark:text-gray-300">
+                                        {comment.body}
+                                      </p>
+                                    </div>
+                                    {canDeleteComment(comment) && (
+                                      <button
+                                        type="button"
+                                        onClick={() => deleteComment(task._id, comment)}
+                                        className="inline-flex shrink-0 items-center gap-1 rounded border border-red-200 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-50 dark:border-red-900 dark:text-red-200 dark:hover:bg-red-950"
+                                      >
+                                        <FiTrash2 aria-hidden="true" />
+                                        Delete
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                            <textarea
+                              value={commentDrafts[task._id] || ""}
+                              onChange={(e) =>
+                                handleCommentDraftChange(task._id, e.target.value)
+                              }
+                              placeholder="Add a comment"
+                              maxLength={2000}
+                              rows={2}
+                              className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:border-gray-700 dark:bg-gray-950 dark:text-white dark:focus:ring-emerald-950"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => addComment(task._id)}
+                              disabled={
+                                savingCommentTaskId === task._id ||
+                                !(commentDrafts[task._id] || "").trim()
+                              }
+                              className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+                            >
+                              <FiSend aria-hidden="true" />
+                              {savingCommentTaskId === task._id ? "Saving" : "Send"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      </>
                     )}
                   </div>
                 );

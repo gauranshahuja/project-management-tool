@@ -1,6 +1,7 @@
 const Project = require('../models/project.js');
 const User = require('../models/User');
 const asyncHandler = require('../utils/asyncHandler');
+const logActivity = require('../utils/logActivity');
 
 // Kaun project dekh/chhu sakta hai:
 // Owner/Admin -> org ke saare projects. Manager/Member -> apne banaye ya members[] wale.
@@ -96,6 +97,11 @@ exports.createProject = asyncHandler(async (req, res) => {
     dueDate,
   });
 
+  logActivity(req.user, 'project.created', `created project "${title}"`, {
+    entityType: 'project',
+    entityId: project._id,
+  });
+
   res.status(201).json(project);
 });
 
@@ -142,7 +148,13 @@ exports.deleteProject = asyncHandler(async (req, res) => {
     return res.status(403).json({ error: 'Not authorized to modify this project' });
   }
 
+  const projectTitle = project.title;
   await project.deleteOne();
+
+  logActivity(req.user, 'project.deleted', `deleted project "${projectTitle}"`, {
+    entityType: 'project',
+    entityId: project._id,
+  });
 
   res.json({ message: 'Project deleted successfully' });
 });
