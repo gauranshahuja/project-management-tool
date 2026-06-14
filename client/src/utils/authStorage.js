@@ -16,6 +16,20 @@ const normalizeAuthUser = (value) => {
   };
 };
 
+const normalizeOrganization = (value) => {
+  const organization = value?.organization || value;
+
+  if (!organization?.id && !organization?._id) {
+    return null;
+  }
+
+  return {
+    id: organization.id || organization._id,
+    _id: organization._id || organization.id,
+    name: organization.name || "",
+  };
+};
+
 export const getStoredUser = () => {
   try {
     const storedUser = JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || "null");
@@ -39,6 +53,9 @@ export const getStoredUser = () => {
 
 export const setStoredUser = (user) => {
   const normalizedUser = normalizeAuthUser(user);
+  const normalizedOrganization = normalizeOrganization(
+    user?.organization || normalizedUser?.organization
+  );
 
   if (!normalizedUser) {
     clearStoredUser();
@@ -48,16 +65,8 @@ export const setStoredUser = (user) => {
   localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(normalizedUser));
   localStorage.removeItem(LEGACY_TOKEN_STORAGE_KEY);
 
-  // Auth response me organization ho to wo bhi store karo
-  const organization = user?.organization;
-  if (organization?.id || organization?._id) {
-    localStorage.setItem(
-      ORG_STORAGE_KEY,
-      JSON.stringify({
-        id: organization.id || organization._id,
-        name: organization.name || "",
-      })
-    );
+  if (normalizedOrganization) {
+    localStorage.setItem(ORG_STORAGE_KEY, JSON.stringify(normalizedOrganization));
   }
 
   return normalizedUser;
@@ -65,8 +74,25 @@ export const setStoredUser = (user) => {
 
 export const getStoredOrganization = () => {
   try {
-    return JSON.parse(localStorage.getItem(ORG_STORAGE_KEY) || "null");
+    const storedOrganization = JSON.parse(
+      localStorage.getItem(ORG_STORAGE_KEY) || "null"
+    );
+    const normalizedOrganization = normalizeOrganization(storedOrganization);
+
+    if (!normalizedOrganization) {
+      localStorage.removeItem(ORG_STORAGE_KEY);
+      return null;
+    }
+
+    if (
+      JSON.stringify(storedOrganization) !== JSON.stringify(normalizedOrganization)
+    ) {
+      localStorage.setItem(ORG_STORAGE_KEY, JSON.stringify(normalizedOrganization));
+    }
+
+    return normalizedOrganization;
   } catch {
+    localStorage.removeItem(ORG_STORAGE_KEY);
     return null;
   }
 };
