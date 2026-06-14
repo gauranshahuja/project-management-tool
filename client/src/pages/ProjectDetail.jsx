@@ -136,6 +136,8 @@ const ProjectDetail = () => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState("");
+  const [assigneeFilter, setAssigneeFilter] = useState("");
   const [searchDraft, setSearchDraft] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [taskForm, setTaskForm] = useState(emptyTaskForm);
@@ -266,6 +268,8 @@ const ProjectDetail = () => {
             page,
             limit: PAGE_SIZE,
             ...(statusFilter ? { status: statusFilter } : {}),
+            ...(priorityFilter ? { priority: priorityFilter } : {}),
+            ...(assigneeFilter ? { assignedTo: assigneeFilter } : {}),
             ...(searchTerm ? { search: searchTerm } : {}),
           },
         });
@@ -288,6 +292,8 @@ const ProjectDetail = () => {
       isProjectReady,
       loadingProject,
       projectId,
+      assigneeFilter,
+      priorityFilter,
       requireAuth,
       resetTaskState,
       searchTerm,
@@ -525,6 +531,16 @@ const ProjectDetail = () => {
     setCurrentPage(1);
   };
 
+  const handlePriorityFilterChange = (e) => {
+    setPriorityFilter(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleAssigneeFilterChange = (e) => {
+    setAssigneeFilter(e.target.value);
+    setCurrentPage(1);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       <Navbar_Dashboard />
@@ -713,6 +729,35 @@ const ProjectDetail = () => {
                 {STATUS_OPTIONS.map((status) => (
                   <option key={status} value={status}>
                     {status}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={priorityFilter}
+                onChange={handlePriorityFilterChange}
+                disabled={!isProjectReady}
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:border-gray-700 dark:bg-gray-950 dark:text-white dark:disabled:bg-gray-800 dark:disabled:text-gray-500 dark:focus:ring-emerald-950"
+              >
+                <option value="">All priorities</option>
+                {STATUS_PRIORITIES.map((priority) => (
+                  <option key={priority} value={priority}>
+                    {priority}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={assigneeFilter}
+                onChange={handleAssigneeFilterChange}
+                disabled={!isProjectReady}
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:border-gray-700 dark:bg-gray-950 dark:text-white dark:disabled:bg-gray-800 dark:disabled:text-gray-500 dark:focus:ring-emerald-950"
+              >
+                <option value="">All assignees</option>
+                <option value="me">Assigned to me</option>
+                {members.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name}
                   </option>
                 ))}
               </select>
