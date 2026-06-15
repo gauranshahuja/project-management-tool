@@ -15,7 +15,7 @@ const getErrorMessage = (err, fallback) =>
   err.response?.data?.error || err.response?.data?.message || fallback;
 
 const StatCard = ({ icon: Icon, label, value, accent }) => (
-  <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+  <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
     <div className="flex items-center justify-between">
       <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
       <Icon className={accent} aria-hidden="true" />
@@ -26,7 +26,6 @@ const StatCard = ({ icon: Icon, label, value, accent }) => (
   </div>
 );
 
-// Simple horizontal bar (no chart lib — keeps bundle small)
 const Bar = ({ label, value, total, color }) => {
   const pct = total > 0 ? Math.round((value / total) * 100) : 0;
   return (
@@ -41,6 +40,58 @@ const Bar = ({ label, value, total, color }) => {
     </div>
   );
 };
+
+const SkeletonCard = () => (
+  <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+    <div className="flex items-center justify-between">
+      <div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+      <div className="h-5 w-5 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+    </div>
+    <div className="mt-3 h-9 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+  </div>
+);
+
+const ChartSkeleton = () => (
+  <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+    <div className="mb-5 h-5 w-36 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+    <div className="space-y-4">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div key={index}>
+          <div className="mb-2 flex justify-between">
+            <div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="h-4 w-8 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+          </div>
+          <div className="h-2.5 w-full animate-pulse rounded-full bg-gray-100 dark:bg-gray-800" />
+        </div>
+      ))}
+    </div>
+  </section>
+);
+
+const AnalyticsSkeleton = () => (
+  <>
+    <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <SkeletonCard key={index} />
+      ))}
+    </div>
+    <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      <ChartSkeleton />
+      <ChartSkeleton />
+    </div>
+    <section className="mt-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+      <div className="mb-4 h-5 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="flex items-center justify-between">
+            <div className="h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="h-6 w-16 animate-pulse rounded-full bg-gray-100 dark:bg-gray-800" />
+          </div>
+        ))}
+      </div>
+    </section>
+  </>
+);
 
 const Analytics = () => {
   const navigate = useNavigate();
@@ -72,13 +123,22 @@ const Analytics = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-100 via-white to-gray-200 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
       <Navbar_Dashboard />
 
-      <div className="mx-auto w-full max-w-6xl p-6">
-        <h1 className="flex items-center gap-2 text-3xl font-bold text-gray-800 dark:text-white">
-          <FiActivity aria-hidden="true" /> Overview
-        </h1>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-          A snapshot of your organization's projects and tasks.
-        </p>
+      <div className="mx-auto w-full max-w-6xl p-4 sm:p-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-800 dark:text-white sm:text-3xl">
+              <FiActivity aria-hidden="true" /> Overview
+            </h1>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+              A snapshot of your organization's projects and tasks.
+            </p>
+          </div>
+          {data && !loading && (
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {data.totalTasks} total task{data.totalTasks === 1 ? "" : "s"}
+            </span>
+          )}
+        </div>
 
         {error && (
           <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
@@ -87,12 +147,10 @@ const Analytics = () => {
         )}
 
         {loading ? (
-          <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">
-            Loading analytics...
-          </p>
+          <AnalyticsSkeleton />
         ) : data ? (
           <>
-            <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard icon={FiFolder} label="Projects" value={data.projects} accent="text-indigo-500" />
               <StatCard icon={FiUsers} label="Members" value={data.members} accent="text-emerald-500" />
               <StatCard icon={FiCheckSquare} label="Total tasks" value={data.totalTasks} accent="text-blue-500" />
@@ -100,7 +158,7 @@ const Analytics = () => {
             </div>
 
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
-              <section className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+              <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
                 <h2 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white">
                   Tasks by status
                 </h2>
@@ -111,7 +169,7 @@ const Analytics = () => {
                 </div>
               </section>
 
-              <section className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+              <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
                 <h2 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white">
                   Tasks by priority
                 </h2>
@@ -123,7 +181,7 @@ const Analytics = () => {
               </section>
             </div>
 
-            <section className="mt-6 rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+            <section className="mt-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
               <h2 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white">
                 Top assignees
               </h2>

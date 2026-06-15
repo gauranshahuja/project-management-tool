@@ -197,7 +197,7 @@ const AuthModal = ({ mode = "login", onClose }) => {
                   className="w-full px-4 py-2 border rounded dark:bg-gray-800 dark:text-white"
                 />
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Creates your company workspace — you become the Owner. Leave
+                  Creates your company workspace - you become the Owner. Leave
                   blank for a personal workspace.
                 </p>
               </div>

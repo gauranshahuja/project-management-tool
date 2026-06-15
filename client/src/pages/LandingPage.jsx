@@ -124,7 +124,7 @@ const LandingPage = ({ showAuth = false }) => {
         {/* Contact Section */}
         <section id="contact" className="relative z-10 py-20 px-6 bg-white dark:bg-gray-900">
           <h2 className="text-3xl font-bold text-center mb-8" data-aos="fade-up">
-            Let’s Talk!
+            Let's Talk!
           </h2>
           <ContactForm />
         </section>
@@ -139,7 +139,7 @@ const LandingPage = ({ showAuth = false }) => {
 
         {/* Footer */}
         <footer className="bg-gray-100 dark:bg-gray-800 text-center py-4 text-sm text-gray-600 dark:text-gray-300">
-          © {new Date().getFullYear()} ProjectHub. All rights reserved.
+          Copyright {new Date().getFullYear()} ProjectHub. All rights reserved.
         </footer>
       </div>
 

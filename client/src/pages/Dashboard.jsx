@@ -3,9 +3,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../services/axiosInstance";
 import { getStoredUser } from "../utils/authStorage";
-import { FiPlus, FiUsers, FiX } from "react-icons/fi";
+import { getEntityId } from "../utils/ids";
+import { FiFolderPlus, FiPlus, FiUsers, FiX } from "react-icons/fi";
 import DashboardCard from "../components/DashboardCard";
 import Navbar_Dashboard from "../components/Navbar_dashboard";
+import { useConfirm } from "../components/ConfirmDialog";
 
 const STATUS_OPTIONS = ["Not Started", "In Progress", "Completed"];
 
@@ -17,7 +19,8 @@ const emptyProjectForm = {
   members: [],
 };
 
-const getMemberId = (member) => member?.id || member?._id || member;
+const getMemberId = (member) => getEntityId(member);
+const getProjectOwnerId = (project) => getEntityId(project?.user);
 
 const toDateInputValue = (value) => {
   if (!value) return "";
@@ -48,8 +51,60 @@ const createProjectPayload = (form, options = {}) => {
   return payload;
 };
 
+const ProjectGridSkeleton = () => (
+  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    {Array.from({ length: 6 }).map((_, index) => (
+      <div
+        key={index}
+        className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      >
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="h-6 w-2/3 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+          <div className="h-8 w-16 animate-pulse rounded bg-gray-100 dark:bg-gray-700" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-4 w-full animate-pulse rounded bg-gray-100 dark:bg-gray-700" />
+          <div className="h-4 w-5/6 animate-pulse rounded bg-gray-100 dark:bg-gray-700" />
+          <div className="h-4 w-2/3 animate-pulse rounded bg-gray-100 dark:bg-gray-700" />
+        </div>
+        <div className="mt-5 flex items-center gap-2">
+          <div className="h-7 w-24 animate-pulse rounded-full bg-gray-100 dark:bg-gray-700" />
+          <div className="h-4 w-20 animate-pulse rounded bg-gray-100 dark:bg-gray-700" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+const EmptyProjects = ({ canCreateProject, onCreate }) => (
+  <div className="flex min-h-[320px] flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white px-6 py-12 text-center shadow-sm dark:border-gray-700 dark:bg-gray-900">
+    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300">
+      <FiFolderPlus size={24} aria-hidden="true" />
+    </div>
+    <h2 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">
+      {canCreateProject ? "Start your first project" : "No projects assigned"}
+    </h2>
+    <p className="mt-2 max-w-md text-sm text-gray-500 dark:text-gray-400">
+      {canCreateProject
+        ? "Create a project, assign teammates, and track tasks from one workspace."
+        : "Projects will appear here after an Owner or Admin adds you to one."}
+    </p>
+    {canCreateProject && (
+      <button
+        type="button"
+        onClick={onCreate}
+        className="mt-5 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700"
+      >
+        <FiPlus aria-hidden="true" />
+        New Project
+      </button>
+    )}
+  </div>
+);
+
 const Dashboard = () => {
   const [projects, setProjects] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("create");
   const [editingProjectId, setEditingProjectId] = useState(null);
@@ -58,8 +113,13 @@ const Dashboard = () => {
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const currentUser = getStoredUser();
+  const currentUserId = getEntityId(currentUser);
   const canCreateProject = currentUser?.role !== "Member";
+  const canModifyProject = (project) =>
+    ["Owner", "Admin"].includes(currentUser?.role) ||
+    getProjectOwnerId(project) === currentUserId;
 
   const getErrorMessage = (err, fallback) =>
     err.response?.data?.error || err.response?.data?.message || fallback;
@@ -79,7 +139,8 @@ const Dashboard = () => {
       .catch((err) => {
         console.error("Failed to fetch projects:", err.response?.data || err.message);
         setError(getErrorMessage(err, "Failed to fetch projects"));
-      });
+      })
+      .finally(() => setLoadingProjects(false));
 
     setLoadingMembers(true);
     axios
@@ -181,7 +242,14 @@ const Dashboard = () => {
   };
 
   const handleDeleteProject = async (project) => {
-    if (!window.confirm(`Delete "${project.title}"?`)) return;
+    const confirmed = await confirm({
+      title: "Delete project?",
+      message: `This will delete "${project.title}" and its project workspace.`,
+      confirmText: "Delete",
+      danger: true,
+    });
+
+    if (!confirmed) return;
 
     setError("");
 
@@ -199,15 +267,23 @@ const Dashboard = () => {
       {/*  Dashboard Navbar */}
       <Navbar_Dashboard />
 
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-            Your Projects
-          </h1>
+      <div className="p-4 sm:p-6">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white sm:text-3xl">
+              Your Projects
+            </h1>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+              {loadingProjects
+                ? "Loading your workspace..."
+                : `${projects.length} project${projects.length === 1 ? "" : "s"} available`}
+            </p>
+          </div>
           {canCreateProject && (
             <button
+              type="button"
               onClick={openCreateModal}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded shadow transition"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white shadow transition hover:bg-indigo-700"
             >
               <FiPlus size={20} /> New Project
             </button>
@@ -221,25 +297,27 @@ const Dashboard = () => {
         )}
 
         {/* Projects Grid */}
-        {projects.length === 0 ? (
-          <p className="text-gray-600 dark:text-gray-300">
-            {canCreateProject
-              ? "No projects found. Create one!"
-              : "No projects yet. You'll see projects here once you're added to one."}
-          </p>
+        {loadingProjects ? (
+          <ProjectGridSkeleton />
+        ) : projects.length === 0 ? (
+          <EmptyProjects canCreateProject={canCreateProject} onCreate={openCreateModal} />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project) => (
-              <DashboardCard
-                key={project._id}
-                project={project}
-                onClick={() =>
-                  navigate(`/projects/${project._id}`, { state: { project } })
-                }
-                onEdit={canCreateProject ? openEditModal : undefined}
-                onDelete={canCreateProject ? handleDeleteProject : undefined}
-              />
-            ))}
+            {projects.map((project) => {
+              const canManageProject = canModifyProject(project);
+
+              return (
+                <DashboardCard
+                  key={project._id}
+                  project={project}
+                  onClick={() =>
+                    navigate(`/projects/${project._id}`, { state: { project } })
+                  }
+                  onEdit={canManageProject ? openEditModal : undefined}
+                  onDelete={canManageProject ? handleDeleteProject : undefined}
+                />
+              );
+            })}
           </div>
         )}
       </div>
@@ -329,7 +407,7 @@ const Dashboard = () => {
                             <span className="min-w-0">
                               <span className="block break-words font-medium">
                                 {member.name || member.email}
-                                {memberId === currentUser?.id && (
+                                {memberId === currentUserId && (
                                   <span className="ml-1 text-xs text-gray-400">
                                     (you)
                                   </span>

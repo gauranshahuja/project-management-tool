@@ -314,6 +314,55 @@ exports.getAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Global search across projects & tasks (org-scoped, role-aware)
+// @route   GET /api/org/search?q=
+// @access  Private (koi bhi member)
+exports.search = asyncHandler(async (req, res) => {
+  const q = (req.query.q || '').trim();
+  if (!q) return res.json({ projects: [], tasks: [] });
+
+  const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+  const orgId = req.user.organization;
+  const isManager = ['Owner', 'Admin'].includes(req.user.role);
+
+  // Project scope: Owner/Admin -> all; others -> own or member-of
+  const projectScope = isManager
+    ? { organization: orgId }
+    : {
+        organization: orgId,
+        $or: [{ user: req.user._id }, { members: req.user._id }],
+      };
+
+  const projects = await Project.find({ ...projectScope, title: rx })
+    .select('title status')
+    .limit(6)
+    .lean();
+
+  // Tasks: only within projects the user can access
+  const accessibleProjectIds = await Project.find(projectScope).distinct('_id');
+
+  const tasks = await Task.find({
+    project: { $in: accessibleProjectIds },
+    $or: [{ title: rx }, { description: rx }],
+  })
+    .select('title status priority project')
+    .populate('project', 'title')
+    .limit(8)
+    .lean();
+
+  res.json({
+    projects: projects.map((p) => ({ id: p._id, title: p.title, status: p.status })),
+    tasks: tasks.map((t) => ({
+      id: t._id,
+      title: t.title,
+      status: t.status,
+      priority: t.priority,
+      projectId: t.project?._id || t.project,
+      projectTitle: t.project?.title || '',
+    })),
+  });
+});
+
 // @desc    Org activity feed (audit log)
 // @route   GET /api/org/activity?limit=
 // @access  Private (koi bhi member)

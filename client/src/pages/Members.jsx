@@ -11,6 +11,8 @@ import {
 import axios from "../services/axiosInstance";
 import Navbar_Dashboard from "../components/Navbar_dashboard";
 import { getStoredUser } from "../utils/authStorage";
+import { getEntityId } from "../utils/ids";
+import { useConfirm } from "../components/ConfirmDialog";
 
 const INVITE_ROLES = ["Member", "Manager", "Admin"];
 
@@ -28,9 +30,42 @@ const roleBadgeClasses = {
     "border-gray-200 bg-gray-100 text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200",
 };
 
+const MembersSkeleton = () => (
+  <div className="divide-y divide-gray-200 dark:divide-gray-700">
+    {Array.from({ length: 5 }).map((_, index) => (
+      <div
+        key={index}
+        className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="h-4 w-44 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+          <div className="h-4 w-64 max-w-full animate-pulse rounded bg-gray-100 dark:bg-gray-800" />
+        </div>
+        <div className="h-8 w-28 animate-pulse rounded-full bg-gray-100 dark:bg-gray-800" />
+      </div>
+    ))}
+  </div>
+);
+
+const EmptyMembers = () => (
+  <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
+    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300">
+      <FiUsers aria-hidden="true" />
+    </div>
+    <h3 className="mt-4 text-base font-semibold text-gray-900 dark:text-white">
+      No members found
+    </h3>
+    <p className="mt-1 max-w-sm text-sm text-gray-500 dark:text-gray-400">
+      Invite teammates to start assigning work across your organization.
+    </p>
+  </div>
+);
+
 const Members = () => {
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const currentUser = getStoredUser();
+  const currentUserId = getEntityId(currentUser);
   const isAdmin = ["Owner", "Admin"].includes(currentUser?.role);
   const isOwner = currentUser?.role === "Owner";
 
@@ -69,9 +104,9 @@ const Members = () => {
       navigate("/");
       return;
     }
+
     loadAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadAll]);
+  }, [currentUser?.token, loadAll, navigate]);
 
   const handleInvite = async (e) => {
     e.preventDefault();
@@ -113,7 +148,14 @@ const Members = () => {
   };
 
   const revokeInvite = async (invite) => {
-    if (!window.confirm(`Revoke invite for ${invite.email}?`)) return;
+    const confirmed = await confirm({
+      title: "Revoke invite?",
+      message: `${invite.email} will no longer be able to join with this link.`,
+      confirmText: "Revoke",
+      danger: true,
+    });
+
+    if (!confirmed) return;
 
     setError("");
     setNotice("");
@@ -134,7 +176,9 @@ const Members = () => {
     try {
       const res = await axios.patch(`/org/members/${member.id}/role`, { role });
       setMembers((prev) =>
-        prev.map((item) => (item.id === member.id ? res.data : item))
+        prev.map((item) =>
+          getEntityId(item) === getEntityId(member) ? res.data : item
+        )
       );
       setNotice(`${res.data.name} is now ${res.data.role}.`);
     } catch (err) {
@@ -143,24 +187,33 @@ const Members = () => {
   };
 
   const removeMember = async (member) => {
-    if (!window.confirm(`Remove ${member.name} from the organization?`)) return;
+    const confirmed = await confirm({
+      title: "Remove member?",
+      message: `${member.name} will lose access to this organization.`,
+      confirmText: "Remove",
+      danger: true,
+    });
+
+    if (!confirmed) return;
 
     setError("");
     setNotice("");
 
     try {
       await axios.delete(`/org/members/${member.id}`);
-      setMembers((prev) => prev.filter((item) => item.id !== member.id));
+      setMembers((prev) =>
+        prev.filter((item) => getEntityId(item) !== getEntityId(member))
+      );
       setNotice(`${member.name} removed.`);
     } catch (err) {
       setError(getErrorMessage(err, "Failed to remove member"));
     }
   };
 
-  // Kis member ki role-dropdown dikhani hai (backend rules mirror)
+  // Mirrors backend role-management rules for member controls.
   const canEditMember = (member) => {
     if (!isAdmin) return false;
-    if (member.id === currentUser?.id) return false;
+    if (getEntityId(member) === currentUserId) return false;
     if (member.role === "Owner") return false;
     if (!isOwner && member.role === "Admin") return false;
     return true;
@@ -172,14 +225,14 @@ const Members = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-100 via-white to-gray-200 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
       <Navbar_Dashboard />
 
-      <div className="mx-auto w-full max-w-5xl p-6">
+      <div className="mx-auto w-full max-w-5xl p-4 sm:p-6">
         <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="flex items-center gap-2 text-3xl font-bold text-gray-800 dark:text-white">
               <FiUsers aria-hidden="true" /> Team
             </h1>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-              {org ? `${org.name} — ${org.memberCount} member${org.memberCount === 1 ? "" : "s"}` : "Loading organization..."}
+              {org ? `${org.name} - ${org.memberCount} member${org.memberCount === 1 ? "" : "s"}` : "Loading organization..."}
             </p>
           </div>
         </div>
@@ -197,7 +250,7 @@ const Members = () => {
         )}
 
         {isAdmin && (
-          <section className="mb-6 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+          <section className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-800 dark:text-white">
               <FiUserPlus aria-hidden="true" /> Invite a teammate
             </h2>
@@ -236,14 +289,14 @@ const Members = () => {
               </button>
             </form>
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              An invite link is generated — copy it and share it with your
+              An invite link is generated - copy it and share it with your
               teammate. Links expire in 7 days.
             </p>
           </section>
         )}
 
         {isAdmin && invites.length > 0 && (
-          <section className="mb-6 rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+          <section className="mb-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
             <h2 className="flex items-center gap-2 border-b border-gray-200 p-4 text-lg font-semibold text-gray-800 dark:border-gray-700 dark:text-white">
               <FiMail aria-hidden="true" /> Pending invites
             </h2>
@@ -258,7 +311,7 @@ const Members = () => {
                       {invite.email}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      as {invite.role} · expires{" "}
+                      as {invite.role} - expires{" "}
                       {new Date(invite.expiresAt).toLocaleDateString()}
                     </p>
                   </div>
@@ -284,14 +337,14 @@ const Members = () => {
           </section>
         )}
 
-        <section className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+        <section className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
           <h2 className="border-b border-gray-200 p-4 text-lg font-semibold text-gray-800 dark:border-gray-700 dark:text-white">
             Members
           </h2>
           {loading ? (
-            <p className="p-4 text-sm text-gray-500 dark:text-gray-400">
-              Loading members...
-            </p>
+            <MembersSkeleton />
+          ) : members.length === 0 ? (
+            <EmptyMembers />
           ) : (
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
               {members.map((member) => (
@@ -302,7 +355,7 @@ const Members = () => {
                   <div className="min-w-0">
                     <p className="break-words font-medium text-gray-800 dark:text-white">
                       {member.name}
-                      {member.id === currentUser?.id && (
+                      {getEntityId(member) === currentUserId && (
                         <span className="ml-2 text-xs text-gray-400">(you)</span>
                       )}
                     </p>

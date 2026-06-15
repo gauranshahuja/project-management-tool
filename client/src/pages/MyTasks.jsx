@@ -4,6 +4,7 @@ import { FiCheckSquare } from "react-icons/fi";
 import axios from "../services/axiosInstance";
 import Navbar_Dashboard from "../components/Navbar_dashboard";
 import { getStoredUser } from "../utils/authStorage";
+import { getEntityId } from "../utils/ids";
 
 const STATUS_OPTIONS = ["Not Started", "In Progress", "Completed"];
 
@@ -145,7 +146,7 @@ const MyTasks = () => {
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       {task.project?.title ? (
                         <Link
-                          to={`/projects/${task.project._id || task.project}`}
+                          to={`/projects/${getEntityId(task.project)}`}
                           className="text-indigo-600 hover:underline dark:text-indigo-400"
                         >
                           {task.project.title}
@@ -153,7 +154,7 @@ const MyTasks = () => {
                       ) : (
                         "Unknown project"
                       )}{" "}
-                      · {formatDate(task.dueDate)}
+                      - {formatDate(task.dueDate)}
                     </p>
                   </div>
 

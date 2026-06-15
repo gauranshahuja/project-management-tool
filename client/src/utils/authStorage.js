@@ -1,3 +1,5 @@
+import { getEntityId } from "./ids";
+
 const USER_STORAGE_KEY = "user";
 const ORG_STORAGE_KEY = "organization";
 const LEGACY_TOKEN_STORAGE_KEY = "token";
@@ -11,8 +13,8 @@ const normalizeAuthUser = (value) => {
 
   return {
     ...user,
-    id: user.id || user._id,
-    _id: user._id || user.id,
+    id: getEntityId(user),
+    _id: getEntityId(user),
   };
 };
 
@@ -24,8 +26,8 @@ const normalizeOrganization = (value) => {
   }
 
   return {
-    id: organization.id || organization._id,
-    _id: organization._id || organization.id,
+    id: getEntityId(organization),
+    _id: getEntityId(organization),
     name: organization.name || "",
   };
 };
@@ -70,6 +72,23 @@ export const setStoredUser = (user) => {
   }
 
   return normalizedUser;
+};
+
+export const updateStoredUserProfile = (profile) => {
+  const currentUser = getStoredUser();
+
+  if (!currentUser) {
+    return null;
+  }
+
+  return setStoredUser({
+    user: {
+      ...currentUser,
+      ...profile,
+      token: currentUser.token,
+    },
+    organization: profile?.organization || currentUser.organization,
+  });
 };
 
 export const getStoredOrganization = () => {

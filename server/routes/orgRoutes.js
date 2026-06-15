@@ -11,6 +11,7 @@ const {
   removeMember,
   getAnalytics,
   getActivity,
+  search,
 } = require('../controllers/orgController');
 const { protect } = require('../middleware/authMiddleware');
 const requireRole = require('../middleware/requireRole');
@@ -23,6 +24,7 @@ router.get('/', protect, getOrganization);
 router.get('/members', protect, getMembers);
 router.get('/analytics', protect, getAnalytics);
 router.get('/activity', protect, getActivity);
+router.get('/search', protect, search);
 
 // Invites (Owner/Admin)
 router

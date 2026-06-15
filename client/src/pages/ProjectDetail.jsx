@@ -14,7 +14,9 @@ import {
 } from "react-icons/fi";
 import axios from "../services/axiosInstance";
 import Navbar_Dashboard from "../components/Navbar_dashboard";
+import KanbanBoard from "../components/KanbanBoard";
 import { getStoredUser } from "../utils/authStorage";
+import { getEntityId } from "../utils/ids";
 
 const STATUS_OPTIONS = ["Not Started", "In Progress", "Completed"];
 const PAGE_SIZE = 8;
@@ -77,7 +79,9 @@ const formatDateTime = (value) => {
 };
 
 const getAuthorId = (comment) =>
-  comment.author?._id || comment.author?.id || comment.author;
+  getEntityId(comment.author);
+const getTaskCreatorId = (task) => getEntityId(task.user);
+const getTaskAssigneeId = (task) => getEntityId(task.assignedTo);
 
 const createTaskPayload = (form, options = {}) => {
   const payload = {
@@ -119,6 +123,7 @@ const ProjectDetail = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const currentUser = getStoredUser();
+  const currentUserId = getEntityId(currentUser);
 
   const [project, setProject] = useState(location.state?.project || null);
   const [tasks, setTasks] = useState([]);
@@ -149,6 +154,7 @@ const ProjectDetail = () => {
   const [savingTask, setSavingTask] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [viewMode, setViewMode] = useState("list"); // "list" | "board"
 
   const taskCounts = useMemo(
     () =>
@@ -162,9 +168,15 @@ const ProjectDetail = () => {
   const canDeleteComment = useCallback(
     (comment) =>
       ["Owner", "Admin"].includes(currentUser?.role) ||
-      getAuthorId(comment) === currentUser?.id ||
-      getAuthorId(comment) === currentUser?._id,
-    [currentUser?.id, currentUser?._id, currentUser?.role]
+      getAuthorId(comment) === currentUserId,
+    [currentUser?.role, currentUserId]
+  );
+  const canModifyTask = useCallback(
+    (task) =>
+      ["Owner", "Admin"].includes(currentUser?.role) ||
+      getTaskCreatorId(task) === currentUserId ||
+      getTaskAssigneeId(task) === currentUserId,
+    [currentUser?.role, currentUserId]
   );
 
   const requireAuth = useCallback(() => {
@@ -305,7 +317,7 @@ const ProjectDetail = () => {
     loadProject();
   }, [loadProject]);
 
-  // Org members ek baar load karo — assignee dropdown ke liye
+  // Load org members once for the assignee dropdown.
   useEffect(() => {
     if (!getStoredUser()?.token) return;
 
@@ -452,7 +464,7 @@ const ProjectDetail = () => {
       status: task.status || "Not Started",
       priority: task.priority || "Medium",
       dueDate: toDateInputValue(task.dueDate),
-      assignedTo: task.assignedTo?._id || task.assignedTo || "",
+      assignedTo: getTaskAssigneeId(task),
     });
     setNotice("");
     setError("");
@@ -485,6 +497,23 @@ const ProjectDetail = () => {
     } catch (err) {
       console.error("Task update error:", err.response?.data || err.message);
       setError(getErrorMessage(err, "Task update failed"));
+    }
+  };
+
+  // Kanban drag-drop se status change (optimistic UI)
+  const changeTaskStatus = async (taskId, nextStatus) => {
+    setError("");
+    setTasks((prev) =>
+      prev.map((t) => (t._id === taskId ? { ...t, status: nextStatus } : t))
+    );
+
+    try {
+      await axios.put(`/tasks/${taskId}`, { status: nextStatus });
+      await loadStats();
+    } catch (err) {
+      console.error("Status update error:", err.response?.data || err.message);
+      setError(getErrorMessage(err, "Failed to move task"));
+      await refreshTasks();
     }
   };
 
@@ -690,13 +719,39 @@ const ProjectDetail = () => {
 
         <section className="rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
           <div className="flex flex-col gap-3 border-b border-gray-200 p-4 dark:border-gray-800 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-950 dark:text-white">
-                Tasks
-              </h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {pagination.totalTasks} total
-              </p>
+            <div className="flex items-center gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-950 dark:text-white">
+                  Tasks
+                </h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  {pagination.totalTasks} total
+                </p>
+              </div>
+              <div className="inline-flex overflow-hidden rounded-lg border border-gray-300 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  className={`px-3 py-1.5 text-sm font-medium transition ${
+                    viewMode === "list"
+                      ? "bg-emerald-600 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  List
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("board")}
+                  className={`px-3 py-1.5 text-sm font-medium transition ${
+                    viewMode === "board"
+                      ? "bg-emerald-600 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  Board
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -764,6 +819,21 @@ const ProjectDetail = () => {
             </div>
           </div>
 
+          {viewMode === "board" ? (
+            <div className="p-4">
+              {loadingTasks ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Loading tasks...
+                </p>
+              ) : (
+                <KanbanBoard
+                  tasks={tasks}
+                  onStatusChange={changeTaskStatus}
+                  onSelectTask={(task) => startEditing(task)}
+                />
+              )}
+            </div>
+          ) : (
           <div className="divide-y divide-gray-200 dark:divide-gray-800">
             {loadingTasks ? (
               <p className="p-4 text-sm text-gray-500 dark:text-gray-400">
@@ -776,10 +846,11 @@ const ProjectDetail = () => {
             ) : (
               tasks.map((task) => {
                 const isEditing = editingTaskId === task._id;
+                const canManageTask = canModifyTask(task);
 
                 return (
                   <div key={task._id} className="p-4">
-                    {isEditing ? (
+                    {isEditing && canManageTask ? (
                       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_120px_150px_140px_auto_auto]">
                         <input
                           type="text"
@@ -903,22 +974,26 @@ const ProjectDetail = () => {
                             <FiMessageSquare aria-hidden="true" />
                             Comments
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => startEditing(task)}
-                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-                          >
-                            <FiEdit2 aria-hidden="true" />
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => deleteTask(task._id)}
-                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 dark:border-red-900 dark:text-red-200 dark:hover:bg-red-950"
-                          >
-                            <FiTrash2 aria-hidden="true" />
-                            Delete
-                          </button>
+                          {canManageTask && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => startEditing(task)}
+                                className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                              >
+                                <FiEdit2 aria-hidden="true" />
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => deleteTask(task._id)}
+                                className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 dark:border-red-900 dark:text-red-200 dark:hover:bg-red-950"
+                              >
+                                <FiTrash2 aria-hidden="true" />
+                                Delete
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                       {openCommentsTaskId === task._id && (
@@ -1001,7 +1076,9 @@ const ProjectDetail = () => {
               })
             )}
           </div>
+          )}
 
+          {viewMode === "list" && (
           <div className="flex flex-col gap-3 border-t border-gray-200 p-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Page {pagination.currentPage} of {pagination.totalPages}
@@ -1029,6 +1106,7 @@ const ProjectDetail = () => {
               </button>
             </div>
           </div>
+          )}
         </section>
       </main>
     </div>
