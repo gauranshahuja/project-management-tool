@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "projecthub-client",
     "public": "dist",
     "ignore": [
       "firebase.json",
