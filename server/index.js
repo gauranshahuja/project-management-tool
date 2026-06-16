@@ -10,6 +10,7 @@ const userRoutes = require('./routes/userRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const orgRoutes = require('./routes/orgRoutes');
+const hrRoutes = require('./routes/hrRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -17,7 +18,9 @@ const app = express();
 // Proper CORS configuration
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://managementtool.netlify.app"
+  "https://managementtool.netlify.app",
+  "https://projecthub-client.web.app",
+  "https://projecthub-client.firebaseapp.com"
 ];
 
 app.use(cors({
@@ -68,6 +71,9 @@ app.use('/api/tasks', taskRoutes);
 
 // Organization routes (members, invites, roles)
 app.use('/api/org', orgRoutes);
+
+// HR routes (employees, attendance, leave, payroll)
+app.use('/api/hr', hrRoutes);
 
 // Unknown API routes -> consistent { error }
 app.use('/api', (req, res) => {
