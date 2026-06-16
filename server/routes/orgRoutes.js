@@ -12,6 +12,9 @@ const {
   getAnalytics,
   getActivity,
   search,
+  setManager,
+  getOrgChart,
+  getMyTeam,
 } = require('../controllers/orgController');
 const { protect } = require('../middleware/authMiddleware');
 const requireRole = require('../middleware/requireRole');
@@ -25,6 +28,8 @@ router.get('/members', protect, getMembers);
 router.get('/analytics', protect, getAnalytics);
 router.get('/activity', protect, getActivity);
 router.get('/search', protect, search);
+router.get('/chart', protect, getOrgChart);
+router.get('/my-team', protect, getMyTeam);
 
 // Invites (Owner/Admin)
 router
@@ -36,6 +41,7 @@ router.delete('/invites/:id', protect, requireRole('Owner', 'Admin'), revokeInvi
 
 // Member management (Owner/Admin)
 router.patch('/members/:userId/role', protect, requireRole('Owner', 'Admin'), changeMemberRole);
+router.patch('/members/:userId/manager', protect, requireRole('Owner', 'Admin'), setManager);
 router.delete('/members/:userId', protect, requireRole('Owner', 'Admin'), removeMember);
 
 module.exports = router;

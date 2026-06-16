@@ -17,6 +17,7 @@ const memberShape = (u) => ({
   email: u.email,
   role: u.role,
   avatar: u.avatar || '',
+  reportsTo: u.reportsTo ? String(u.reportsTo) : null,
 });
 
 const inviteShape = (inv) => ({
@@ -55,7 +56,7 @@ exports.getOrganization = asyncHandler(async (req, res) => {
 // @access  Private (koi bhi member)
 exports.getMembers = asyncHandler(async (req, res) => {
   const members = await User.find({ organization: req.user.organization })
-    .select('name email role avatar')
+    .select('name email role avatar reportsTo')
     .sort({ createdAt: 1 });
 
   res.json(members.map(memberShape));
@@ -384,4 +385,143 @@ exports.getActivity = asyncHandler(async (req, res) => {
       createdAt: a.createdAt,
     }))
   );
+});
+
+// ── Org hierarchy (reporting tree) ──────────────────────────
+
+// Kya `managerId` actually `userId` ke downline me hai? (cycle se bachne ke liye)
+const isInDownline = (managerId, userId, parentMap) => {
+  let cursor = managerId;
+  const seen = new Set();
+  while (cursor) {
+    if (seen.has(String(cursor))) break; // safety
+    seen.add(String(cursor));
+    if (String(cursor) === String(userId)) return true;
+    cursor = parentMap[String(cursor)];
+  }
+  return false;
+};
+
+// @desc Set/change who a member reports to
+// @route PATCH /api/org/members/:userId/manager  { managerId|null }
+// @access Owner/Admin
+exports.setManager = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const { managerId } = req.body;
+
+  if (String(userId) === String(managerId)) {
+    return res.status(400).json({ error: 'A member cannot report to themselves' });
+  }
+
+  const member = await User.findOne({
+    _id: userId,
+    organization: req.user.organization,
+  });
+  if (!member) return res.status(404).json({ error: 'Member not found' });
+
+  if (managerId) {
+    const manager = await User.findOne({
+      _id: managerId,
+      organization: req.user.organization,
+    });
+    if (!manager) {
+      return res.status(400).json({ error: 'Manager must belong to your organization' });
+    }
+
+    // Cycle guard: naya manager kahin member ke apne downline me to nahi
+    const all = await User.find({ organization: req.user.organization })
+      .select('reportsTo')
+      .lean();
+    const parentMap = all.reduce((acc, u) => {
+      acc[String(u._id)] = u.reportsTo ? String(u.reportsTo) : null;
+      return acc;
+    }, {});
+    if (isInDownline(managerId, userId, parentMap)) {
+      return res
+        .status(400)
+        .json({ error: 'That would create a reporting loop' });
+    }
+  }
+
+  member.reportsTo = managerId || null;
+  await member.save();
+
+  logActivity(
+    req.user,
+    'org.manager_changed',
+    managerId
+      ? `set ${member.name}'s manager`
+      : `made ${member.name} report to no one`
+  );
+
+  res.json({ userId: member._id, reportsTo: member.reportsTo });
+});
+
+// @desc Full org chart as a nested tree
+// @route GET /api/org/chart
+// @access koi bhi member
+exports.getOrgChart = asyncHandler(async (req, res) => {
+  const users = await User.find({ organization: req.user.organization })
+    .select('name email role avatar reportsTo')
+    .lean();
+
+  const nodeById = {};
+  users.forEach((u) => {
+    nodeById[String(u._id)] = {
+      id: u._id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      avatar: u.avatar || '',
+      reportsTo: u.reportsTo ? String(u.reportsTo) : null,
+      reports: [],
+    };
+  });
+
+  const roots = [];
+  users.forEach((u) => {
+    const node = nodeById[String(u._id)];
+    const parent = u.reportsTo && nodeById[String(u.reportsTo)];
+    if (parent) parent.reports.push(node);
+    else roots.push(node);
+  });
+
+  res.json(roots);
+});
+
+// @desc My direct + indirect reports (downline)
+// @route GET /api/org/my-team
+// @access koi bhi member
+exports.getMyTeam = asyncHandler(async (req, res) => {
+  const users = await User.find({ organization: req.user.organization })
+    .select('name email role avatar reportsTo')
+    .lean();
+
+  // children map
+  const childrenOf = {};
+  users.forEach((u) => {
+    const p = u.reportsTo ? String(u.reportsTo) : null;
+    if (!childrenOf[p]) childrenOf[p] = [];
+    childrenOf[p].push(u);
+  });
+
+  const downline = [];
+  const stack = [...(childrenOf[String(req.user._id)] || [])];
+  const seen = new Set();
+  while (stack.length) {
+    const u = stack.pop();
+    if (seen.has(String(u._id))) continue;
+    seen.add(String(u._id));
+    downline.push({
+      id: u._id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      avatar: u.avatar || '',
+      direct: String(u.reportsTo) === String(req.user._id),
+    });
+    stack.push(...(childrenOf[String(u._id)] || []));
+  }
+
+  res.json(downline);
 });

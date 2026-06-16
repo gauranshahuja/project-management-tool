@@ -26,6 +26,12 @@ const userSchema = new mongoose.Schema(
     avatar: { type: String, default: '' },
     isOAuth: { type: Boolean, default: false },
     authProvider: { type: String, default: '' },
+    // Org hierarchy: kis user ko ye report karta hai (manager). null = top (Owner).
+    reportsTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
   },
   { timestamps: true }
 );
