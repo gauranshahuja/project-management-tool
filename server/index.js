@@ -1,4 +1,5 @@
 ﻿const express = require('express');
+const http = require('http');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -12,6 +13,7 @@ const taskRoutes = require('./routes/taskRoutes');
 const orgRoutes = require('./routes/orgRoutes');
 const hrRoutes = require('./routes/hrRoutes');
 const errorHandler = require('./middleware/errorHandler');
+const { initRealtime } = require('./utils/realtime');
 
 const app = express();
 
@@ -85,12 +87,16 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
+// HTTP server (Express + Socket.io share the same server)
+const server = http.createServer(app);
+initRealtime(server, allowedOrigins);
+
 // MongoDB + Server
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("MongoDB Connected");
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   } catch (error) {
     console.error("MongoDB connection error:", error.message);
     process.exit(1);

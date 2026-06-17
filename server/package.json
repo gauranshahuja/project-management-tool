@@ -21,7 +21,8 @@
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.18.0",
-    "mongoose": "^8.17.0"
+    "mongoose": "^8.17.0",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "mongodb-memory-server": "^11.2.0",
