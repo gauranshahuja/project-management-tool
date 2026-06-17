@@ -18,3 +18,6 @@ API_CONTRACT.md
 .ai/
 AI_NOTES.md
 scripts/
+
+# Temp raw import of inventory-order-hub (reference only, not part of build)
+_order-hub-import/
