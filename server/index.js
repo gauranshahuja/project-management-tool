@@ -13,6 +13,7 @@ const taskRoutes = require('./routes/taskRoutes');
 const orgRoutes = require('./routes/orgRoutes');
 const hrRoutes = require('./routes/hrRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const inventoryRoutes = require('./routes/inventoryRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const { initRealtime } = require('./utils/realtime');
 
@@ -80,6 +81,9 @@ app.use('/api/hr', hrRoutes);
 
 // Chat routes (conversations + encrypted messages)
 app.use('/api/chat', chatRoutes);
+
+// Inventory routes (locations, products, stock, ledger)
+app.use('/api/inventory', inventoryRoutes);
 
 // Unknown API routes -> consistent { error }
 app.use('/api', (req, res) => {
