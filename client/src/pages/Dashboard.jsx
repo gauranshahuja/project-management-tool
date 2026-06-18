@@ -111,6 +111,7 @@ const Dashboard = () => {
   const [form, setForm] = useState(emptyProjectForm);
   const [orgMembers, setOrgMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [savingProject, setSavingProject] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const confirm = useConfirm();
@@ -150,6 +151,19 @@ const Dashboard = () => {
       .finally(() => setLoadingMembers(false));
   }, [navigate]);
 
+  useEffect(() => {
+    if (!showModal) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && !savingProject) {
+        closeModal();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showModal, savingProject]);
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -188,6 +202,8 @@ const Dashboard = () => {
   };
 
   const closeModal = () => {
+    if (savingProject) return;
+
     setShowModal(false);
     setModalMode("create");
     setEditingProjectId(null);
@@ -216,6 +232,8 @@ const Dashboard = () => {
         return;
       }
 
+      setSavingProject(true);
+
       if (modalMode === "edit" && editingProjectId) {
         const res = await axios.put(`/projects/${editingProjectId}`, payload);
 
@@ -238,6 +256,8 @@ const Dashboard = () => {
           modalMode === "edit" ? "Project update failed" : "Project creation failed"
         )
       );
+    } finally {
+      setSavingProject(false);
     }
   };
 
@@ -264,7 +284,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 via-white to-gray-200 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
-      {/*  Dashboard Navbar */}
       <Navbar_Dashboard />
 
       <div className="p-4 sm:p-6">
@@ -296,7 +315,6 @@ const Dashboard = () => {
           </p>
         )}
 
-        {/* Projects Grid */}
         {loadingProjects ? (
           <ProjectGridSkeleton />
         ) : projects.length === 0 ? (
@@ -322,21 +340,41 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/*  Project Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-lg w-full max-w-md relative">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black bg-opacity-50 p-4 backdrop-blur-sm"
+          onClick={closeModal}
+        >
+          <div
+            className="relative w-full max-w-md rounded-lg bg-white p-6 shadow-lg dark:bg-gray-900"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="project-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
             <button
+              type="button"
               onClick={closeModal}
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white text-xl"
+              disabled={savingProject}
+              className="absolute right-3 top-3 rounded-md p-1 text-xl text-gray-500 transition hover:bg-gray-100 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
               aria-label="Close project form"
             >
               <FiX aria-hidden="true" />
             </button>
-            <h2 className="text-2xl font-bold mb-4 text-center text-gray-800 dark:text-white">
+            <h2
+              id="project-modal-title"
+              className="mb-4 text-center text-2xl font-bold text-gray-800 dark:text-white"
+            >
               {modalMode === "edit" ? "Edit Project" : "Create Project"}
             </h2>
-            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+            {error && (
+              <p
+                className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-900 dark:bg-red-950 dark:text-red-200"
+                role="alert"
+              >
+                {error}
+              </p>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <input
                 type="text"
@@ -345,6 +383,7 @@ const Dashboard = () => {
                 value={form.title}
                 onChange={handleChange}
                 required
+                disabled={savingProject}
                 className="w-full px-4 py-2 border rounded dark:bg-gray-800 dark:text-white"
               />
               <textarea
@@ -352,12 +391,14 @@ const Dashboard = () => {
                 placeholder="Project Description"
                 value={form.description}
                 onChange={handleChange}
+                disabled={savingProject}
                 className="w-full px-4 py-2 border rounded dark:bg-gray-800 dark:text-white"
               />
               <select
                 name="status"
                 value={form.status}
                 onChange={handleChange}
+                disabled={savingProject}
                 className="w-full px-4 py-2 border rounded dark:bg-gray-800 dark:text-white"
               >
                 {STATUS_OPTIONS.map((status) => (
@@ -371,6 +412,7 @@ const Dashboard = () => {
                 name="dueDate"
                 value={form.dueDate}
                 onChange={handleChange}
+                disabled={savingProject}
                 className="w-full px-4 py-2 border rounded dark:bg-gray-800 dark:text-white"
               />
               {canCreateProject && (
@@ -402,6 +444,7 @@ const Dashboard = () => {
                               type="checkbox"
                               checked={checked}
                               onChange={() => handleMemberToggle(memberId)}
+                              disabled={savingProject}
                               className="mt-1"
                             />
                             <span className="min-w-0">
@@ -426,9 +469,14 @@ const Dashboard = () => {
               )}
               <button
                 type="submit"
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded"
+                disabled={savingProject}
+                className="w-full rounded bg-indigo-600 px-4 py-2 text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-gray-400"
               >
-                {modalMode === "edit" ? "Save Changes" : "Create"}
+                {savingProject
+                  ? "Saving..."
+                  : modalMode === "edit"
+                    ? "Save Changes"
+                    : "Create"}
               </button>
             </form>
           </div>

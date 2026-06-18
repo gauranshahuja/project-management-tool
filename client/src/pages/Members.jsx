@@ -74,6 +74,9 @@ const Members = () => {
   const [invites, setInvites] = useState([]);
   const [inviteForm, setInviteForm] = useState({ email: "", role: "Member" });
   const [sendingInvite, setSendingInvite] = useState(false);
+  const [copyFallback, setCopyFallback] = useState(null);
+  const [busyInviteId, setBusyInviteId] = useState("");
+  const [busyMemberId, setBusyMemberId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -112,6 +115,7 @@ const Members = () => {
     e.preventDefault();
     setError("");
     setNotice("");
+    setCopyFallback(null);
 
     if (!inviteForm.email.trim()) {
       setError("Email is required.");
@@ -138,12 +142,15 @@ const Members = () => {
 
   const copyInviteLink = async (invite) => {
     const link = `${window.location.origin}/join?token=${invite.token}`;
+    setCopyFallback(null);
 
     try {
       await navigator.clipboard.writeText(link);
       setNotice(`Invite link copied for ${invite.email}.`);
+      setError("");
     } catch {
-      window.prompt("Copy this invite link:", link);
+      setNotice("");
+      setCopyFallback({ inviteId: invite.id, link });
     }
   };
 
@@ -159,6 +166,8 @@ const Members = () => {
 
     setError("");
     setNotice("");
+    setCopyFallback(null);
+    setBusyInviteId(invite.id);
 
     try {
       await axios.delete(`/org/invites/${invite.id}`);
@@ -166,12 +175,19 @@ const Members = () => {
       setNotice("Invite revoked.");
     } catch (err) {
       setError(getErrorMessage(err, "Failed to revoke invite"));
+    } finally {
+      setBusyInviteId("");
     }
   };
 
   const changeRole = async (member, role) => {
+    if (member.role === role) return;
+
+    const memberId = getEntityId(member);
     setError("");
     setNotice("");
+    setCopyFallback(null);
+    setBusyMemberId(memberId);
 
     try {
       const res = await axios.patch(`/org/members/${member.id}/role`, { role });
@@ -183,6 +199,8 @@ const Members = () => {
       setNotice(`${res.data.name} is now ${res.data.role}.`);
     } catch (err) {
       setError(getErrorMessage(err, "Failed to change role"));
+    } finally {
+      setBusyMemberId("");
     }
   };
 
@@ -198,6 +216,8 @@ const Members = () => {
 
     setError("");
     setNotice("");
+    setCopyFallback(null);
+    setBusyMemberId(getEntityId(member));
 
     try {
       await axios.delete(`/org/members/${member.id}`);
@@ -207,6 +227,8 @@ const Members = () => {
       setNotice(`${member.name} removed.`);
     } catch (err) {
       setError(getErrorMessage(err, "Failed to remove member"));
+    } finally {
+      setBusyMemberId("");
     }
   };
 
@@ -265,6 +287,8 @@ const Members = () => {
                   setInviteForm((prev) => ({ ...prev, email: e.target.value }))
                 }
                 placeholder="teammate@company.com"
+                required
+                disabled={sendingInvite}
                 className="min-w-0 flex-1 rounded border px-4 py-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
               <select
@@ -272,6 +296,7 @@ const Members = () => {
                 onChange={(e) =>
                   setInviteForm((prev) => ({ ...prev, role: e.target.value }))
                 }
+                disabled={sendingInvite}
                 className="rounded border px-4 py-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               >
                 {roleOptionsFor().map((role) => (
@@ -304,33 +329,51 @@ const Members = () => {
               {invites.map((invite) => (
                 <div
                   key={invite.id}
-                  className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 p-4"
                 >
-                  <div className="min-w-0">
-                    <p className="break-words font-medium text-gray-800 dark:text-white">
-                      {invite.email}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      as {invite.role} - expires{" "}
-                      {new Date(invite.expiresAt).toLocaleDateString()}
-                    </p>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="break-words font-medium text-gray-800 dark:text-white">
+                        {invite.email}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        as {invite.role} - expires{" "}
+                        {new Date(invite.expiresAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => copyInviteLink(invite)}
+                        disabled={busyInviteId === invite.id}
+                        className="inline-flex items-center gap-2 rounded border border-gray-300 px-3 py-2 text-sm text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                      >
+                        <FiCopy aria-hidden="true" /> Copy link
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => revokeInvite(invite)}
+                        disabled={busyInviteId === invite.id}
+                        className="inline-flex items-center gap-2 rounded border border-red-200 px-3 py-2 text-sm text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900 dark:text-red-200 dark:hover:bg-red-950"
+                      >
+                        <FiX aria-hidden="true" />
+                        {busyInviteId === invite.id ? "Revoking" : "Revoke"}
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex shrink-0 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => copyInviteLink(invite)}
-                      className="inline-flex items-center gap-2 rounded border border-gray-300 px-3 py-2 text-sm text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-                    >
-                      <FiCopy aria-hidden="true" /> Copy link
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => revokeInvite(invite)}
-                      className="inline-flex items-center gap-2 rounded border border-red-200 px-3 py-2 text-sm text-red-700 transition hover:bg-red-50 dark:border-red-900 dark:text-red-200 dark:hover:bg-red-950"
-                    >
-                      <FiX aria-hidden="true" /> Revoke
-                    </button>
-                  </div>
+                  {copyFallback?.inviteId === invite.id && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950">
+                      <p className="mb-2 text-xs text-amber-800 dark:text-amber-200">
+                        Clipboard access is blocked. Select and copy this link manually.
+                      </p>
+                      <input
+                        readOnly
+                        value={copyFallback.link}
+                        onFocus={(event) => event.target.select()}
+                        className="w-full rounded border border-amber-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-amber-800 dark:bg-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -369,7 +412,8 @@ const Members = () => {
                       <select
                         value={member.role}
                         onChange={(e) => changeRole(member, e.target.value)}
-                        className="rounded border px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                        disabled={busyMemberId === getEntityId(member)}
+                        className="rounded border px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                       >
                         {roleOptionsFor().map((role) => (
                           <option key={role} value={role}>
@@ -391,9 +435,11 @@ const Members = () => {
                       <button
                         type="button"
                         onClick={() => removeMember(member)}
-                        className="inline-flex items-center gap-1 rounded border border-red-200 px-3 py-1.5 text-sm text-red-700 transition hover:bg-red-50 dark:border-red-900 dark:text-red-200 dark:hover:bg-red-950"
+                        disabled={busyMemberId === getEntityId(member)}
+                        className="inline-flex items-center gap-1 rounded border border-red-200 px-3 py-1.5 text-sm text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900 dark:text-red-200 dark:hover:bg-red-950"
                       >
-                        <FiTrash2 aria-hidden="true" /> Remove
+                        <FiTrash2 aria-hidden="true" />
+                        {busyMemberId === getEntityId(member) ? "Working" : "Remove"}
                       </button>
                     )}
                   </div>

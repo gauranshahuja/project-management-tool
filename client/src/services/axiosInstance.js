@@ -29,7 +29,7 @@ axiosInstance.interceptors.response.use(
       clearStoredUser();
 
       if (window.location.pathname !== "/") {
-        window.location.href = "/";
+        window.location.replace("/");
       }
     }
 

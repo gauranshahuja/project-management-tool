@@ -4,6 +4,7 @@ import {
   FiArrowLeft,
   FiCheck,
   FiEdit2,
+  FiInbox,
   FiMessageSquare,
   FiRefreshCw,
   FiSave,
@@ -15,6 +16,7 @@ import {
 import axios from "../services/axiosInstance";
 import Navbar_Dashboard from "../components/Navbar_dashboard";
 import KanbanBoard from "../components/KanbanBoard";
+import { useConfirm } from "../components/ConfirmDialog";
 import { getStoredUser } from "../utils/authStorage";
 import { getEntityId } from "../utils/ids";
 
@@ -118,10 +120,51 @@ const statusClasses = {
     "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
 };
 
+const TaskListSkeleton = () => (
+  <div className="divide-y divide-gray-200 dark:divide-gray-800">
+    {Array.from({ length: 5 }).map((_, index) => (
+      <div key={index} className="p-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0 flex-1 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="h-5 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+              <div className="h-7 w-24 animate-pulse rounded-full bg-gray-100 dark:bg-gray-800" />
+              <div className="h-7 w-20 animate-pulse rounded-full bg-gray-100 dark:bg-gray-800" />
+            </div>
+            <div className="h-4 w-5/6 animate-pulse rounded bg-gray-100 dark:bg-gray-800" />
+            <div className="h-3 w-36 animate-pulse rounded bg-gray-100 dark:bg-gray-800" />
+          </div>
+          <div className="flex gap-2">
+            <div className="h-10 w-28 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
+            <div className="h-10 w-20 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+const EmptyTaskList = ({ hasFilters }) => (
+  <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
+    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300">
+      <FiInbox aria-hidden="true" />
+    </div>
+    <h3 className="mt-4 text-base font-semibold text-gray-950 dark:text-white">
+      {hasFilters ? "No tasks match these filters" : "No tasks yet"}
+    </h3>
+    <p className="mt-1 max-w-sm text-sm text-gray-500 dark:text-gray-400">
+      {hasFilters
+        ? "Clear a filter or search term to see more project work."
+        : "Add the first task above to start tracking this project."}
+    </p>
+  </div>
+);
+
 const ProjectDetail = () => {
   const { projectId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const currentUser = getStoredUser();
   const currentUserId = getEntityId(currentUser);
 
@@ -165,6 +208,9 @@ const ProjectDetail = () => {
     [stats]
   );
   const isProjectReady = !loadingProject && !projectLoadFailed && Boolean(project);
+  const hasTaskFilters = Boolean(
+    statusFilter || priorityFilter || assigneeFilter || searchTerm
+  );
   const canDeleteComment = useCallback(
     (comment) =>
       ["Owner", "Admin"].includes(currentUser?.role) ||
@@ -393,7 +439,14 @@ const ProjectDetail = () => {
   };
 
   const deleteComment = async (taskId, comment) => {
-    if (!window.confirm("Delete this comment?")) return;
+    const confirmed = await confirm({
+      title: "Delete comment?",
+      message: "This comment will be removed from the task thread.",
+      confirmText: "Delete",
+      danger: true,
+    });
+
+    if (!confirmed) return;
 
     setError("");
     setNotice("");
@@ -500,7 +553,7 @@ const ProjectDetail = () => {
     }
   };
 
-  // Kanban drag-drop se status change (optimistic UI)
+  // Optimistically update board status, then sync stats with the backend.
   const changeTaskStatus = async (taskId, nextStatus) => {
     setError("");
     setTasks((prev) =>
@@ -517,8 +570,17 @@ const ProjectDetail = () => {
     }
   };
 
-  const deleteTask = async (taskId) => {
-    if (!window.confirm("Delete this task?")) return;
+  const deleteTask = async (taskOrId) => {
+    const taskId = typeof taskOrId === "string" ? taskOrId : taskOrId?._id;
+    const taskTitle = typeof taskOrId === "string" ? "this task" : `"${taskOrId.title}"`;
+    const confirmed = await confirm({
+      title: "Delete task?",
+      message: `This will permanently delete ${taskTitle}.`,
+      confirmText: "Delete",
+      danger: true,
+    });
+
+    if (!confirmed || !taskId) return;
 
     setError("");
     setNotice("");
@@ -822,9 +884,9 @@ const ProjectDetail = () => {
           {viewMode === "board" ? (
             <div className="p-4">
               {loadingTasks ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Loading tasks...
-                </p>
+                <TaskListSkeleton />
+              ) : tasks.length === 0 ? (
+                <EmptyTaskList hasFilters={hasTaskFilters} />
               ) : (
                 <KanbanBoard
                   tasks={tasks}
@@ -836,13 +898,9 @@ const ProjectDetail = () => {
           ) : (
           <div className="divide-y divide-gray-200 dark:divide-gray-800">
             {loadingTasks ? (
-              <p className="p-4 text-sm text-gray-500 dark:text-gray-400">
-                Loading tasks...
-              </p>
+              <TaskListSkeleton />
             ) : tasks.length === 0 ? (
-              <p className="p-4 text-sm text-gray-500 dark:text-gray-400">
-                No tasks found.
-              </p>
+              <EmptyTaskList hasFilters={hasTaskFilters} />
             ) : (
               tasks.map((task) => {
                 const isEditing = editingTaskId === task._id;
@@ -986,7 +1044,7 @@ const ProjectDetail = () => {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => deleteTask(task._id)}
+                                onClick={() => deleteTask(task)}
                                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 dark:border-red-900 dark:text-red-200 dark:hover:bg-red-950"
                               >
                                 <FiTrash2 aria-hidden="true" />
@@ -1078,7 +1136,7 @@ const ProjectDetail = () => {
           </div>
           )}
 
-          {viewMode === "list" && (
+          {viewMode === "list" && !loadingTasks && tasks.length > 0 && (
           <div className="flex flex-col gap-3 border-t border-gray-200 p-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Page {pagination.currentPage} of {pagination.totalPages}

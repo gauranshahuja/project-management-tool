@@ -1,6 +1,6 @@
 import { useNavigate, NavLink } from "react-router-dom";
 import { FiLogOut, FiSun, FiMoon, FiUser } from "react-icons/fi";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   clearStoredUser,
   getStoredUser,
@@ -16,6 +16,7 @@ const navLinkClasses = ({ isActive }) =>
 
 const Navbar_Dashboard = () => {
   const navigate = useNavigate();
+  const dropdownRef = useRef(null);
   const [user, setUser] = useState(null);
   const [org, setOrg] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -26,6 +27,30 @@ const Navbar_Dashboard = () => {
     setOrg(getStoredOrganization());
     setIsDark(document.documentElement.classList.contains("dark"));
   }, []);
+
+  useEffect(() => {
+    if (!dropdownOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!dropdownRef.current?.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setDropdownOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [dropdownOpen]);
 
   const handleLogout = () => {
     clearStoredUser();
@@ -42,16 +67,16 @@ const Navbar_Dashboard = () => {
   };
 
   return (
-    <nav className="bg-white dark:bg-gray-900 shadow px-6 py-4 flex items-center justify-between">
-      {/* Brand: org ka naam, fallback ProjectHub */}
+    <nav className="flex items-center justify-between bg-white px-4 py-4 shadow dark:bg-gray-900 sm:px-6">
       <div className="flex items-center gap-6 min-w-0">
-        <div
-          className="truncate text-xl font-bold text-indigo-600 cursor-pointer"
+        <button
+          type="button"
+          className="min-w-0 truncate text-left text-xl font-bold text-indigo-600"
           onClick={() => navigate("/dashboard")}
           title={org?.name || "ProjectHub"}
         >
           {org?.name || "ProjectHub"}
-        </div>
+        </button>
 
         <div className="hidden items-center gap-1 sm:flex">
           <NavLink to="/dashboard" className={navLinkClasses}>
@@ -72,36 +97,46 @@ const Navbar_Dashboard = () => {
         </div>
       </div>
 
-      {/* Right section */}
-      <div className="flex items-center gap-4 relative">
-        {/* Dark mode toggle */}
+      <div className="relative flex items-center gap-2 sm:gap-4">
         <button
+          type="button"
           onClick={toggleDarkMode}
-          className="text-gray-600 dark:text-gray-300 hover:text-indigo-600"
+          className="rounded-md p-2 text-gray-600 transition hover:bg-gray-100 hover:text-indigo-600 dark:text-gray-300 dark:hover:bg-gray-800"
           title="Toggle dark mode"
+          aria-label="Toggle dark mode"
         >
           {isDark ? <FiSun size={20} /> : <FiMoon size={20} />}
         </button>
 
-        {/* User dropdown */}
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
           <button
+            type="button"
             onClick={() => setDropdownOpen((prev) => !prev)}
-            className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-indigo-600"
+            className="flex min-w-0 items-center gap-2 rounded-md px-2 py-2 text-gray-700 transition hover:bg-gray-100 hover:text-indigo-600 dark:text-gray-300 dark:hover:bg-gray-800"
+            aria-expanded={dropdownOpen}
+            aria-haspopup="menu"
           >
-            <FiUser />
-            <span className="max-w-[140px] truncate">{user?.name || "User"}</span>
+            <FiUser aria-hidden="true" />
+            <span className="hidden max-w-[140px] truncate sm:inline">
+              {user?.name || "User"}
+            </span>
             {user?.role && (
-              <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-200">
+              <span className="hidden rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-200 md:inline">
                 {user.role}
               </span>
             )}
           </button>
 
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-44 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded shadow z-50">
+            <div
+              className="absolute right-0 z-50 mt-2 w-56 rounded border bg-white shadow dark:border-gray-700 dark:bg-gray-800"
+              role="menu"
+            >
               <div className="border-b px-4 py-2 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
-                {user?.email}
+                <p className="truncate font-medium text-gray-700 dark:text-gray-200">
+                  {user?.name || "User"}
+                </p>
+                <p className="truncate">{user?.email}</p>
               </div>
               <div className="flex flex-col sm:hidden">
                 <NavLink
@@ -141,10 +176,11 @@ const Navbar_Dashboard = () => {
                 </NavLink>
               </div>
               <button
+                type="button"
                 onClick={handleLogout}
                 className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
               >
-                <FiLogOut /> Logout
+                <FiLogOut aria-hidden="true" /> Logout
               </button>
             </div>
           )}
