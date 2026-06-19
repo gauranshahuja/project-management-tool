@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const inv = require('../controllers/inventoryController');
 const ord = require('../controllers/orderController');
+const ret = require('../controllers/returnController');
 const { protect } = require('../middleware/authMiddleware');
 
 // Locations (warehouses)
@@ -32,5 +33,12 @@ router.patch('/orders/:id/status', protect, ord.updateOrderStatus);
 router.get('/transfers', protect, ord.getTransfers);
 router.post('/transfers', protect, ord.createTransfer);
 router.patch('/transfers/:id/accept', protect, ord.acceptTransfer);
+
+// Returns
+router.get('/returns', protect, ret.getReturns);
+router.post('/returns', protect, ret.createReturn);
+
+// Inventory dashboard stats
+router.get('/stats', protect, ret.getInventoryStats);
 
 module.exports = router;
