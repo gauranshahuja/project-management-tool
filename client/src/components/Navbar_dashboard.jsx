@@ -7,6 +7,7 @@ import {
   getStoredOrganization,
 } from "../utils/authStorage";
 import { disconnectSocket } from "../utils/socket";
+import NotificationBell from "./NotificationBell";
 
 const navLinkClasses = ({ isActive }) =>
   `rounded px-3 py-1.5 text-sm font-medium transition ${
@@ -30,6 +31,7 @@ const Navbar_Dashboard = () => {
     { to: "/analytics", label: "Overview" },
     { to: "/activity", label: "Activity" },
     { to: "/members", label: "Team" },
+    { to: "/inventory", label: "Inventory" },
     { to: "/hr/attendance", label: "Attendance" },
     { to: "/hr/leaves", label: "Leave" },
     { to: "/hr/payroll", label: "Payroll" },
@@ -105,6 +107,8 @@ const Navbar_Dashboard = () => {
       </div>
 
       <div className="relative flex items-center gap-2 sm:gap-4">
+        {user?.token && <NotificationBell />}
+
         <button
           type="button"
           onClick={toggleDarkMode}

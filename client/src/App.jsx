@@ -12,6 +12,7 @@ import HrAttendance from "./pages/HrAttendance";
 import HrEmployees from "./pages/HrEmployees";
 import HrLeaves from "./pages/HrLeaves";
 import HrPayroll from "./pages/HrPayroll";
+import Inventory from "./pages/Inventory";
 import CommandPalette from "./components/CommandPalette";
 import axios from "./services/axiosInstance";
 import { getStoredUser, updateStoredUserProfile } from "./utils/authStorage";
@@ -164,6 +165,14 @@ const App = () => {
         element={
           <ProtectedRoute>
             <HrPayroll />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/inventory"
+        element={
+          <ProtectedRoute>
+            <Inventory />
           </ProtectedRoute>
         }
       />
