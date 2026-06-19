@@ -8,6 +8,10 @@ import MyTasks from "./pages/MyTasks";
 import JoinPage from "./pages/JoinPage";
 import Activity from "./pages/Activity";
 import Analytics from "./pages/Analytics";
+import HrAttendance from "./pages/HrAttendance";
+import HrEmployees from "./pages/HrEmployees";
+import HrLeaves from "./pages/HrLeaves";
+import HrPayroll from "./pages/HrPayroll";
 import CommandPalette from "./components/CommandPalette";
 import axios from "./services/axiosInstance";
 import { getStoredUser, updateStoredUserProfile } from "./utils/authStorage";
@@ -128,6 +132,38 @@ const App = () => {
         element={
           <ProtectedRoute>
             <Activity />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hr/employees"
+        element={
+          <ProtectedRoute>
+            <HrEmployees />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hr/attendance"
+        element={
+          <ProtectedRoute>
+            <HrAttendance />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hr/leaves"
+        element={
+          <ProtectedRoute>
+            <HrLeaves />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hr/payroll"
+        element={
+          <ProtectedRoute>
+            <HrPayroll />
           </ProtectedRoute>
         }
       />

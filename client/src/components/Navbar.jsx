@@ -8,10 +8,10 @@ const Navbar = ({ onLogin, onRegister }) => {
   const [isScrolled, setIsScrolled] = useState(false);
 
   const navLinks = [
+    { name: "Operating Model", to: "operating-system" },
     { name: "Features", to: "features" },
-    { name: "Testimonials", to: "testimonials" },
-    { name: "Newsletter", to: "newsletter" },
-    { name: "Contact", to: "contact" },
+    { name: "Proof", to: "testimonials" },
+    { name: "Trust", to: "contact" },
   ];
 
   const toggleMenu = () => setMenuOpen((prev) => !prev);
@@ -36,12 +36,10 @@ const Navbar = ({ onLogin, onRegister }) => {
       } backdrop-blur-md`}
     >
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        {/* Logo */}
         <h1 className="text-2xl font-bold text-indigo-600 dark:text-white">
           ProjectHub
         </h1>
 
-        {/* Desktop Navigation */}
         <nav className="hidden md:flex gap-6 items-center">
           {navLinks.map((link) => (
             <Link
@@ -74,7 +72,6 @@ const Navbar = ({ onLogin, onRegister }) => {
           </button>
         </nav>
 
-        {/* Mobile Menu Toggle */}
         <button
           onClick={toggleMenu}
           className="md:hidden text-2xl text-gray-800 dark:text-white"
@@ -84,7 +81,6 @@ const Navbar = ({ onLogin, onRegister }) => {
         </button>
       </div>
 
-      {/* Mobile Navigation */}
       {menuOpen && (
         <div className="md:hidden bg-white dark:bg-gray-900 px-6 py-4 space-y-4">
           {navLinks.map((link) => (

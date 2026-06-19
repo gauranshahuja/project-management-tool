@@ -6,6 +6,7 @@ import {
   getStoredUser,
   getStoredOrganization,
 } from "../utils/authStorage";
+import { disconnectSocket } from "../utils/socket";
 
 const navLinkClasses = ({ isActive }) =>
   `rounded px-3 py-1.5 text-sm font-medium transition ${
@@ -21,6 +22,21 @@ const Navbar_Dashboard = () => {
   const [org, setOrg] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const isHrManager = ["Owner", "Admin"].includes(user?.role);
+
+  const navItems = [
+    { to: "/dashboard", label: "Projects" },
+    { to: "/my-tasks", label: "My Tasks" },
+    { to: "/analytics", label: "Overview" },
+    { to: "/activity", label: "Activity" },
+    { to: "/members", label: "Team" },
+    { to: "/hr/attendance", label: "Attendance" },
+    { to: "/hr/leaves", label: "Leave" },
+    { to: "/hr/payroll", label: "Payroll" },
+    ...(isHrManager
+      ? [{ to: "/hr/employees", label: "Employees" }]
+      : []),
+  ];
 
   useEffect(() => {
     setUser(getStoredUser());
@@ -53,6 +69,7 @@ const Navbar_Dashboard = () => {
   }, [dropdownOpen]);
 
   const handleLogout = () => {
+    disconnectSocket();
     clearStoredUser();
     navigate("/");
   };
@@ -78,22 +95,12 @@ const Navbar_Dashboard = () => {
           {org?.name || "ProjectHub"}
         </button>
 
-        <div className="hidden items-center gap-1 sm:flex">
-          <NavLink to="/dashboard" className={navLinkClasses}>
-            Projects
-          </NavLink>
-          <NavLink to="/my-tasks" className={navLinkClasses}>
-            My Tasks
-          </NavLink>
-          <NavLink to="/analytics" className={navLinkClasses}>
-            Overview
-          </NavLink>
-          <NavLink to="/activity" className={navLinkClasses}>
-            Activity
-          </NavLink>
-          <NavLink to="/members" className={navLinkClasses}>
-            Team
-          </NavLink>
+        <div className="hidden items-center gap-1 lg:flex">
+          {navItems.map((item) => (
+            <NavLink key={item.to} to={item.to} className={navLinkClasses}>
+              {item.label}
+            </NavLink>
+          ))}
         </div>
       </div>
 
@@ -138,42 +145,17 @@ const Navbar_Dashboard = () => {
                 </p>
                 <p className="truncate">{user?.email}</p>
               </div>
-              <div className="flex flex-col sm:hidden">
-                <NavLink
-                  to="/dashboard"
-                  className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  onClick={() => setDropdownOpen(false)}
-                >
-                  Projects
-                </NavLink>
-                <NavLink
-                  to="/my-tasks"
-                  className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  onClick={() => setDropdownOpen(false)}
-                >
-                  My Tasks
-                </NavLink>
-                <NavLink
-                  to="/analytics"
-                  className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  onClick={() => setDropdownOpen(false)}
-                >
-                  Overview
-                </NavLink>
-                <NavLink
-                  to="/activity"
-                  className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  onClick={() => setDropdownOpen(false)}
-                >
-                  Activity
-                </NavLink>
-                <NavLink
-                  to="/members"
-                  className="px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  onClick={() => setDropdownOpen(false)}
-                >
-                  Team
-                </NavLink>
+              <div className="flex flex-col lg:hidden">
+                {navItems.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className="px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                    onClick={() => setDropdownOpen(false)}
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
               </div>
               <button
                 type="button"

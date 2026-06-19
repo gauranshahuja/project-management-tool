@@ -12,6 +12,7 @@ import axios from "../services/axiosInstance";
 import Navbar_Dashboard from "../components/Navbar_dashboard";
 import { getStoredUser } from "../utils/authStorage";
 import { getEntityId } from "../utils/ids";
+import { getSocket } from "../utils/socket";
 import { useConfirm } from "../components/ConfirmDialog";
 
 const INVITE_ROLES = ["Member", "Manager", "Admin"];
@@ -77,6 +78,7 @@ const Members = () => {
   const [copyFallback, setCopyFallback] = useState(null);
   const [busyInviteId, setBusyInviteId] = useState("");
   const [busyMemberId, setBusyMemberId] = useState("");
+  const [onlineIds, setOnlineIds] = useState(() => new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -110,6 +112,21 @@ const Members = () => {
 
     loadAll();
   }, [currentUser?.token, loadAll, navigate]);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return undefined;
+
+    const handlePresence = (payload) => {
+      setOnlineIds(new Set((payload?.online || []).map((id) => getEntityId(id))));
+    };
+
+    socket.on("presence:update", handlePresence);
+
+    return () => {
+      socket.off("presence:update", handlePresence);
+    };
+  }, []);
 
   const handleInvite = async (e) => {
     e.preventDefault();
@@ -400,6 +417,12 @@ const Members = () => {
                       {member.name}
                       {getEntityId(member) === currentUserId && (
                         <span className="ml-2 text-xs text-gray-400">(you)</span>
+                      )}
+                      {onlineIds.has(getEntityId(member)) && (
+                        <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                          Online
+                        </span>
                       )}
                     </p>
                     <p className="break-words text-sm text-gray-500 dark:text-gray-400">

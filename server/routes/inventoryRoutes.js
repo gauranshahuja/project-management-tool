@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const inv = require('../controllers/inventoryController');
+const ord = require('../controllers/orderController');
 const { protect } = require('../middleware/authMiddleware');
 
 // Locations (warehouses)
@@ -21,5 +22,15 @@ router.get('/stock', protect, inv.getStock);
 
 // Ledger (audit trail)
 router.get('/ledger', protect, inv.getLedger);
+
+// Orders (FEFO fulfillment)
+router.get('/orders', protect, ord.getOrders);
+router.post('/orders', protect, ord.createOrder);
+router.patch('/orders/:id/status', protect, ord.updateOrderStatus);
+
+// Stock transfers (warehouse -> warehouse)
+router.get('/transfers', protect, ord.getTransfers);
+router.post('/transfers', protect, ord.createTransfer);
+router.patch('/transfers/:id/accept', protect, ord.acceptTransfer);
 
 module.exports = router;

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { clearStoredUser, getStoredUser } from "../utils/authStorage";
+import { disconnectSocket } from "../utils/socket";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
@@ -26,6 +27,7 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      disconnectSocket();
       clearStoredUser();
 
       if (window.location.pathname !== "/") {

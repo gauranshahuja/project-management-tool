@@ -13,6 +13,7 @@ import {
 import axios from "../services/axiosInstance";
 import Navbar_Dashboard from "../components/Navbar_dashboard";
 import { getStoredUser } from "../utils/authStorage";
+import { getSocket } from "../utils/socket";
 
 const getErrorMessage = (err, fallback) =>
   err.response?.data?.error || err.response?.data?.message || fallback;
@@ -82,6 +83,7 @@ const Activity = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [liveConnected, setLiveConnected] = useState(false);
 
   useEffect(() => {
     if (!getStoredUser()?.token) {
@@ -95,6 +97,41 @@ const Activity = () => {
       .catch((err) => setError(getErrorMessage(err, "Failed to load activity")))
       .finally(() => setLoading(false));
   }, [navigate]);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return undefined;
+
+    const handleConnect = () => setLiveConnected(true);
+    const handleDisconnect = () => setLiveConnected(false);
+    const handleActivity = (payload) => {
+      setItems((prev) => {
+        const item = {
+          ...payload,
+          id:
+            payload.id ||
+            payload._id ||
+            `${payload.createdAt || Date.now()}-${payload.action}-${payload.entityId || ""}`,
+        };
+
+        const alreadyExists = prev.some((entry) => entry.id === item.id);
+        if (alreadyExists) return prev;
+
+        return [item, ...prev].slice(0, 50);
+      });
+    };
+
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("activity:new", handleActivity);
+    setLiveConnected(socket.connected);
+
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("activity:new", handleActivity);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 via-white to-gray-200 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
@@ -111,9 +148,25 @@ const Activity = () => {
             </p>
           </div>
           {!loading && (
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {items.length} event{items.length === 1 ? "" : "s"}
-            </span>
+            <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${
+                  liveConnected
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+                    : "border-gray-200 bg-white text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400"
+                }`}
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    liveConnected ? "bg-emerald-500" : "bg-gray-400"
+                  }`}
+                />
+                {liveConnected ? "Live" : "Offline"}
+              </span>
+              <span>
+                {items.length} event{items.length === 1 ? "" : "s"}
+              </span>
+            </div>
           )}
         </div>
 
