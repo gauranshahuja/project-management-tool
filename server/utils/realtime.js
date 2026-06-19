@@ -8,6 +8,7 @@ let io = null;
 const presence = new Map();
 
 const orgRoom = (orgId) => `org:${orgId}`;
+const userRoom = (userId) => `user:${userId}`;
 
 const onlineUserIds = (orgId) => {
   const orgMap = presence.get(String(orgId));
@@ -73,6 +74,7 @@ const initRealtime = (httpServer, allowedOrigins) => {
   io.on('connection', (socket) => {
     const { orgId, userId, name } = socket.data;
     socket.join(orgRoom(orgId));
+    socket.join(userRoom(userId)); // personal room for notifications
     addPresence(orgId, userId, name, socket.id);
     broadcastPresence(orgId);
 
@@ -92,4 +94,10 @@ const emitToOrg = (orgId, event, payload) => {
   io.to(orgRoom(orgId)).emit(event, payload);
 };
 
-module.exports = { initRealtime, emitToOrg, onlineUserIds };
+// Sirf ek specific user ke clients ko event bhejo (notifications ke liye).
+const emitToUser = (userId, event, payload) => {
+  if (!io || !userId) return;
+  io.to(userRoom(userId)).emit(event, payload);
+};
+
+module.exports = { initRealtime, emitToOrg, emitToUser, onlineUserIds };

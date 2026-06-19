@@ -1,0 +1,58 @@
+const Notification = require('../models/Notification');
+const asyncHandler = require('../utils/asyncHandler');
+
+// @desc My notifications (newest first)
+// @route GET /api/notifications?unread=true&limit=
+exports.getNotifications = asyncHandler(async (req, res) => {
+  const query = { user: req.user._id };
+  if (req.query.unread === 'true') query.read = false;
+  const limit = Math.min(Math.max(parseInt(req.query.limit) || 30, 1), 100);
+
+  const items = await Notification.find(query)
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .lean();
+
+  res.json(
+    items.map((n) => ({
+      id: n._id,
+      type: n.type,
+      message: n.message,
+      link: n.link,
+      read: n.read,
+      createdAt: n.createdAt,
+    }))
+  );
+});
+
+// @desc Unread count (for the bell badge)
+// @route GET /api/notifications/unread-count
+exports.getUnreadCount = asyncHandler(async (req, res) => {
+  const count = await Notification.countDocuments({
+    user: req.user._id,
+    read: false,
+  });
+  res.json({ count });
+});
+
+// @desc Mark one notification read
+// @route PATCH /api/notifications/:id/read
+exports.markRead = asyncHandler(async (req, res) => {
+  const notif = await Notification.findOneAndUpdate(
+    { _id: req.params.id, user: req.user._id },
+    { $set: { read: true } },
+    { new: true }
+  );
+  if (!notif) return res.status(404).json({ error: 'Notification not found' });
+  res.json({ id: notif._id, read: true });
+});
+
+// @desc Mark all read
+// @route PATCH /api/notifications/read-all
+exports.markAllRead = asyncHandler(async (req, res) => {
+  await Notification.updateMany(
+    { user: req.user._id, read: false },
+    { $set: { read: true } }
+  );
+  res.json({ message: 'All marked read' });
+});

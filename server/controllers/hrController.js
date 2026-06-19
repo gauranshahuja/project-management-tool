@@ -6,6 +6,7 @@ const Leave = require('../models/Leave');
 const Payslip = require('../models/Payslip');
 const asyncHandler = require('../utils/asyncHandler');
 const logActivity = require('../utils/logActivity');
+const notify = require('../utils/notify');
 
 const isHrManager = (user) => ['Owner', 'Admin'].includes(user.role);
 const todayKey = () => new Date().toISOString().slice(0, 10); // YYYY-MM-DD
@@ -262,6 +263,14 @@ exports.reviewLeave = asyncHandler(async (req, res) => {
   await leave.save();
 
   logActivity(req.user, 'leave.reviewed', `${status.toLowerCase()} a leave request`);
+  // Notify the employee whose leave was reviewed
+  notify({
+    orgId: req.user.organization,
+    userId: leave.user,
+    type: 'leave.reviewed',
+    message: `Your leave request was ${status.toLowerCase()}`,
+    link: '/hr/leaves',
+  });
   res.json(leave);
 });
 

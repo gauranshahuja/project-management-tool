@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Comment = require('../models/Comment');
 const asyncHandler = require('../utils/asyncHandler');
 const logActivity = require('../utils/logActivity');
+const notify = require('../utils/notify');
 const { canAccessProject } = require('./projectController');
 
 // Project access check + project return (ya 400/403/404 response)
@@ -169,6 +170,16 @@ exports.createTask = asyncHandler(async (req, res) => {
       entityType: 'task',
       entityId: task._id,
     });
+    // Notify assignee (unless they assigned it to themselves)
+    if (String(assignee._id) !== String(req.user._id)) {
+      notify({
+        orgId: req.user.organization,
+        userId: assignee._id,
+        type: 'task.assigned',
+        message: `${req.user.name} assigned you "${title}"`,
+        link: `/projects/${project._id}`,
+      });
+    }
   }
 
   res.status(201).json(task);
@@ -228,6 +239,15 @@ exports.updateTask = asyncHandler(async (req, res) => {
       entityType: 'task',
       entityId: updated._id,
     });
+    if (String(assignee._id) !== String(req.user._id)) {
+      notify({
+        orgId: req.user.organization,
+        userId: assignee._id,
+        type: 'task.assigned',
+        message: `${req.user.name} assigned you "${updated.title}"`,
+        link: `/projects/${task.project}`,
+      });
+    }
   }
 
   res.json(updated);
