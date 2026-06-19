@@ -10,6 +10,7 @@ import {
   FiPlus,
   FiRefreshCw,
   FiRepeat,
+  FiRotateCcw,
   FiSearch,
   FiTruck,
   FiXCircle,
@@ -29,6 +30,7 @@ const TABS = [
   { id: "stock", label: "Stock", icon: FiArchive },
   { id: "orders", label: "Orders", icon: FiTruck },
   { id: "transfers", label: "Transfers", icon: FiRepeat },
+  { id: "returns", label: "Returns", icon: FiRotateCcw },
   { id: "ledger", label: "Ledger", icon: FiClipboard },
 ];
 
@@ -118,7 +120,13 @@ const Inventory = () => {
   const [ledger, setLedger] = useState([]);
   const [orders, setOrders] = useState([]);
   const [transfers, setTransfers] = useState([]);
+  const [returns, setReturns] = useState([]);
   const [summary, setSummary] = useState({ byLocation: [], lowStock: [] });
+  const [inventoryStats, setInventoryStats] = useState({
+    orders: {},
+    returns: {},
+    transfersInTransit: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -161,6 +169,15 @@ const Inventory = () => {
     batchNo: "",
     qty: "",
   });
+  const [returnForm, setReturnForm] = useState({
+    productId: "",
+    locationId: "",
+    orderId: "",
+    batchNo: "",
+    qty: "",
+    reason: "",
+    disposition: "Restocked",
+  });
 
   const hydrateDefaultForms = useCallback((nextLocations, nextProducts) => {
     const firstLocationId = getEntityId(nextLocations[0]);
@@ -183,6 +200,11 @@ const Inventory = () => {
       toLocationId: prev.toLocationId || secondLocationId,
       productId: prev.productId || firstProductId,
     }));
+    setReturnForm((prev) => ({
+      ...prev,
+      locationId: prev.locationId || firstLocationId,
+      productId: prev.productId || firstProductId,
+    }));
   }, []);
 
   const loadInventory = useCallback(
@@ -199,6 +221,8 @@ const Inventory = () => {
           ledgerRes,
           ordersRes,
           transfersRes,
+          returnsRes,
+          statsRes,
         ] = await Promise.all([
           axios.get("/inventory/locations"),
           axios.get("/inventory/products", {
@@ -209,6 +233,8 @@ const Inventory = () => {
           axios.get("/inventory/ledger", { params: { limit: 80 } }),
           axios.get("/inventory/orders", { params: { limit: 80 } }),
           axios.get("/inventory/transfers", { params: { limit: 80 } }),
+          axios.get("/inventory/returns", { params: { limit: 80 } }),
+          axios.get("/inventory/stats"),
         ]);
 
         setLocations(locationsRes.data || []);
@@ -218,6 +244,10 @@ const Inventory = () => {
         setLedger(ledgerRes.data || []);
         setOrders(ordersRes.data || []);
         setTransfers(transfersRes.data || []);
+        setReturns(returnsRes.data || []);
+        setInventoryStats(
+          statsRes.data || { orders: {}, returns: {}, transfersInTransit: 0 }
+        );
         hydrateDefaultForms(locationsRes.data || [], productsRes.data || []);
       } catch (err) {
         const message = errorMessage(err, "Failed to load inventory");
@@ -286,6 +316,15 @@ const Inventory = () => {
     }));
   const resetTransferForm = () =>
     setTransferForm((prev) => ({ ...prev, batchNo: "", qty: "" }));
+  const resetReturnForm = () =>
+    setReturnForm((prev) => ({
+      ...prev,
+      orderId: "",
+      batchNo: "",
+      qty: "",
+      reason: "",
+      disposition: "Restocked",
+    }));
 
   const createLocation = async (event) => {
     event.preventDefault();
@@ -463,6 +502,29 @@ const Inventory = () => {
     }
   };
 
+  const createReturn = async (event) => {
+    event.preventDefault();
+    setBusy("return");
+    try {
+      await axios.post("/inventory/returns", {
+        productId: returnForm.productId,
+        locationId: returnForm.locationId,
+        orderId: returnForm.orderId || undefined,
+        batchNo: returnForm.batchNo.trim(),
+        qty: Number(returnForm.qty),
+        reason: returnForm.reason.trim(),
+        disposition: returnForm.disposition,
+      });
+      resetReturnForm();
+      await loadInventory({ quiet: true });
+      notifySuccess("Return recorded.");
+    } catch (err) {
+      notifyError(errorMessage(err, "Failed to record return"));
+    } finally {
+      setBusy("");
+    }
+  };
+
   const renderSelectOptions = (items, getLabel) =>
     items.map((item) => (
       <option key={getEntityId(item)} value={getEntityId(item)}>
@@ -498,6 +560,52 @@ const Inventory = () => {
           </p>
         </div>
       </div>
+
+      <section>
+        <SectionTitle
+          icon={FiBarChart2}
+          title="Movement stats"
+          subtitle="Order, return, and transfer signals from the inventory backend."
+        />
+        <div className="mt-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Fulfilled orders</p>
+            <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
+              {inventoryStats.orders?.Fulfilled?.count || 0}
+            </p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {inventoryStats.orders?.Fulfilled?.units || 0} units
+            </p>
+          </div>
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Delivered orders</p>
+            <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
+              {inventoryStats.orders?.Delivered?.count || 0}
+            </p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {inventoryStats.orders?.Delivered?.units || 0} units
+            </p>
+          </div>
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Restocked returns</p>
+            <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
+              {inventoryStats.returns?.Restocked?.count || 0}
+            </p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {inventoryStats.returns?.Restocked?.units || 0} units
+            </p>
+          </div>
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Damaged returns</p>
+            <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
+              {inventoryStats.returns?.Damaged?.count || 0}
+            </p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {inventoryStats.returns?.Damaged?.units || 0} units
+            </p>
+          </div>
+        </div>
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section>
@@ -1172,6 +1280,145 @@ const Inventory = () => {
     </div>
   );
 
+  const renderReturns = () => (
+    <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
+      <form
+        onSubmit={createReturn}
+        className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+      >
+        <SectionTitle
+          icon={FiRotateCcw}
+          title="Record return"
+          subtitle="Restocked returns add sellable stock back; damaged returns only record the event."
+        />
+        <div className="mt-4 space-y-4">
+          <select
+            value={returnForm.orderId}
+            onChange={(e) => setReturnForm((prev) => ({ ...prev, orderId: e.target.value }))}
+            className="w-full rounded border px-3 py-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          >
+            <option value="">No linked order</option>
+            {orders.map((order) => (
+              <option key={getEntityId(order)} value={getEntityId(order)}>
+                {order.orderNo} - {order.product?.name || order.sku}
+              </option>
+            ))}
+          </select>
+          <select
+            value={returnForm.productId}
+            onChange={(e) => setReturnForm((prev) => ({ ...prev, productId: e.target.value }))}
+            required
+            className="w-full rounded border px-3 py-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          >
+            <option value="">Product</option>
+            {renderSelectOptions(products, (product) => `${product.sku} - ${product.name}`)}
+          </select>
+          <select
+            value={returnForm.locationId}
+            onChange={(e) => setReturnForm((prev) => ({ ...prev, locationId: e.target.value }))}
+            required
+            className="w-full rounded border px-3 py-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          >
+            <option value="">Warehouse</option>
+            {renderSelectOptions(locations, (location) => location.name)}
+          </select>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <input
+              value={returnForm.batchNo}
+              onChange={(e) => setReturnForm((prev) => ({ ...prev, batchNo: e.target.value }))}
+              placeholder="Batch no optional"
+              className="rounded border px-3 py-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            />
+            <input
+              type="number"
+              min="1"
+              value={returnForm.qty}
+              onChange={(e) => setReturnForm((prev) => ({ ...prev, qty: e.target.value }))}
+              placeholder="Quantity"
+              required
+              className="rounded border px-3 py-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            />
+          </div>
+          <select
+            value={returnForm.disposition}
+            onChange={(e) => setReturnForm((prev) => ({ ...prev, disposition: e.target.value }))}
+            className="w-full rounded border px-3 py-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          >
+            <option value="Restocked">Restocked</option>
+            <option value="Damaged">Damaged</option>
+          </select>
+          <textarea
+            value={returnForm.reason}
+            onChange={(e) => setReturnForm((prev) => ({ ...prev, reason: e.target.value }))}
+            placeholder="Reason"
+            rows={3}
+            className="w-full rounded border px-3 py-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          />
+          <button
+            type="submit"
+            disabled={busy === "return"}
+            className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+          >
+            {busy === "return" ? "Recording..." : "Record return"}
+          </button>
+        </div>
+      </form>
+
+      <section>
+        <SectionTitle icon={FiRotateCcw} title="Returns" />
+        <div className="mt-3 space-y-3">
+          {returns.length === 0 ? (
+            <EmptyState
+              icon={FiRotateCcw}
+              title="No returns"
+              text="Customer returns will appear here after they are recorded."
+            />
+          ) : (
+            returns.map((item) => (
+              <article
+                key={getEntityId(item)}
+                className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                        {item.returnNo}
+                      </h3>
+                      <span
+                        className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
+                          item.disposition === "Damaged"
+                            ? "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-200"
+                            : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+                        }`}
+                      >
+                        {item.disposition}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      {item.product?.name || item.sku} - {item.qty} at {item.location?.name || "-"}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Batch {item.batchNo || "-"} - Order {item.orderNo || "-"} - {formatDateTime(item.createdAt)}
+                    </p>
+                    {item.reason && (
+                      <p className="mt-3 rounded-lg bg-gray-50 p-3 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                        {item.reason}
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    By {item.by?.name || "-"}
+                  </p>
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+      </section>
+    </div>
+  );
+
   const renderLedger = () => (
     <section>
       <SectionTitle icon={FiClipboard} title="Stock ledger" subtitle="Immutable movement history across stock, orders, and transfers." />
@@ -1230,6 +1477,7 @@ const Inventory = () => {
     if (activeTab === "stock") return renderStock();
     if (activeTab === "orders") return renderOrders();
     if (activeTab === "transfers") return renderTransfers();
+    if (activeTab === "returns") return renderReturns();
     return renderLedger();
   };
 
