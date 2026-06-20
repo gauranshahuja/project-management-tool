@@ -26,6 +26,7 @@ const timeAgo = (value) => {
 
 const normalizeNotification = (item) => ({
   id: item.id || item._id || `${item.type}-${item.createdAt}-${item.message}`,
+  persisted: Boolean(item.id || item._id),
   type: item.type || "notification",
   message: item.message || "New notification",
   link: item.link || "",
@@ -70,17 +71,25 @@ const NotificationBell = () => {
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return undefined;
+    let refreshTimer;
 
     const handleNotification = (payload) => {
       const notification = normalizeNotification(payload || {});
       setCount((prev) => prev + 1);
       setItems((prev) => [notification, ...prev].slice(0, 20));
       notifyInfo(notification.message);
+
+      window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => {
+        loadCount();
+        loadItems();
+      }, 800);
     };
 
     socket.on("notification:new", handleNotification);
 
     return () => {
+      window.clearTimeout(refreshTimer);
       socket.off("notification:new", handleNotification);
     };
   }, []);
@@ -114,9 +123,11 @@ const NotificationBell = () => {
   const openNotification = async (item) => {
     setBusy(true);
     try {
-      if (!item.read && item.id) {
+      if (!item.read && item.persisted) {
         await axios.patch(`/notifications/${item.id}/read`);
         setCount((prev) => Math.max(0, prev - 1));
+      } else if (!item.read) {
+        await loadCount();
       }
 
       setItems((prev) =>

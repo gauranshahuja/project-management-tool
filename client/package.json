@@ -8,7 +8,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@heroicons/react": "^2.2.0",
     "axios": "^1.11.0",
     "firebase": "^12.0.0",
     "react": "^19.1.1",
@@ -17,9 +16,7 @@
     "react-router-dom": "^7.7.1",
     "react-scroll": "^1.9.3",
     "react-toastify": "^11.0.5",
-    "socket.io-client": "^4.8.3",
-    "swiper": "^11.2.10",
-    "three": "^0.179.1"
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.7.0",

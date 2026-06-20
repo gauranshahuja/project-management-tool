@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import {
   FiActivity,
   FiBarChart2,
@@ -11,7 +11,8 @@ import {
   FiUsers,
 } from "react-icons/fi";
 import Navbar from "../components/Navbar";
-import AuthModal from "../components/AuthModal";
+
+const AuthModal = lazy(() => import("../components/AuthModal"));
 
 const metrics = [
   { label: "Live workstreams", value: "12" },
@@ -360,7 +361,9 @@ const LandingPage = ({ showAuth = false }) => {
       </main>
 
       {showAuthModal && (
-        <AuthModal mode={authMode} onClose={() => setShowAuthModal(false)} />
+        <Suspense fallback={null}>
+          <AuthModal mode={authMode} onClose={() => setShowAuthModal(false)} />
+        </Suspense>
       )}
     </div>
   );

@@ -1,21 +1,22 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
-import Dashboard from "./pages/Dashboard";
 import LandingPage from "./pages/LandingPage";
-import ProjectDetail from "./pages/ProjectDetail";
-import Members from "./pages/Members";
-import MyTasks from "./pages/MyTasks";
 import JoinPage from "./pages/JoinPage";
-import Activity from "./pages/Activity";
-import Analytics from "./pages/Analytics";
-import HrAttendance from "./pages/HrAttendance";
-import HrEmployees from "./pages/HrEmployees";
-import HrLeaves from "./pages/HrLeaves";
-import HrPayroll from "./pages/HrPayroll";
-import Inventory from "./pages/Inventory";
 import CommandPalette from "./components/CommandPalette";
 import axios from "./services/axiosInstance";
 import { getStoredUser, updateStoredUserProfile } from "./utils/authStorage";
+
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
+const Members = lazy(() => import("./pages/Members"));
+const MyTasks = lazy(() => import("./pages/MyTasks"));
+const Activity = lazy(() => import("./pages/Activity"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const HrAttendance = lazy(() => import("./pages/HrAttendance"));
+const HrEmployees = lazy(() => import("./pages/HrEmployees"));
+const HrLeaves = lazy(() => import("./pages/HrLeaves"));
+const HrPayroll = lazy(() => import("./pages/HrPayroll"));
+const Inventory = lazy(() => import("./pages/Inventory"));
 
 const ProtectedRoute = ({ children }) => {
   const [hasSession, setHasSession] = useState(() => Boolean(getStoredUser()?.token));
@@ -78,6 +79,13 @@ const App = () => {
   return (
     <>
       <CommandPalette />
+      <Suspense
+        fallback={
+          <div className="flex min-h-screen items-center justify-center bg-gray-100 text-sm text-gray-600 dark:bg-gray-950 dark:text-gray-300">
+            Loading workspace...
+          </div>
+        }
+      >
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route
@@ -182,6 +190,7 @@ const App = () => {
         element={<h1 className="p-6 text-center">404 - Page Not Found</h1>}
       />
     </Routes>
+      </Suspense>
     </>
   );
 };
