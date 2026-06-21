@@ -8,6 +8,7 @@ const Task = require('../models/Task');
 const Activity = require('../models/Activity');
 const asyncHandler = require('../utils/asyncHandler');
 const logActivity = require('../utils/logActivity');
+const { buildAppUrl, escapeHtml, sendEmail, wrap } = require('../utils/email');
 
 const INVITE_EXPIRY_DAYS = 7;
 
@@ -106,6 +107,23 @@ exports.createInvite = asyncHandler(async (req, res) => {
   });
 
   logActivity(req.user, 'invite.created', `invited ${email} as ${role}`);
+
+  // Email the invitee a join link. It skips safely if SMTP is not configured.
+  const org = await Organization.findById(req.user.organization).select('name').lean();
+  const joinLink = buildAppUrl(`/join?token=${encodeURIComponent(invite.token)}`);
+  const inviterName = escapeHtml(req.user.name || 'A teammate');
+  const orgName = escapeHtml(org?.name || 'their workspace');
+  const safeRole = escapeHtml(role);
+  sendEmail({
+    to: invite.email,
+    subject: `${req.user.name} invited you to ${org?.name || 'their team'} on ProjectHub`,
+    html: wrap(
+      `You're invited as ${role}`,
+      `<p>${inviterName} invited you to join <strong>${orgName}</strong> as <strong>${safeRole}</strong>.</p>
+       <p style="margin:16px 0"><a href="${escapeHtml(joinLink)}" style="background:#4f46e5;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">Accept invite</a></p>
+       <p style="font-size:12px;color:#6b7280">Or paste this link: ${escapeHtml(joinLink)}<br/>This invite expires in ${INVITE_EXPIRY_DAYS} days.</p>`
+    ),
+  });
 
   res.status(201).json(inviteShape(invite));
 });

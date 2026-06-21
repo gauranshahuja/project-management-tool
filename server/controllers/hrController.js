@@ -270,6 +270,7 @@ exports.reviewLeave = asyncHandler(async (req, res) => {
     type: 'leave.reviewed',
     message: `Your leave request was ${status.toLowerCase()}`,
     link: '/hr/leaves',
+    email: true,
   });
   res.json(leave);
 });

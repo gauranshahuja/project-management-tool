@@ -178,6 +178,7 @@ exports.createTask = asyncHandler(async (req, res) => {
         type: 'task.assigned',
         message: `${req.user.name} assigned you "${title}"`,
         link: `/projects/${project._id}`,
+        email: true,
       });
     }
   }
@@ -246,6 +247,7 @@ exports.updateTask = asyncHandler(async (req, res) => {
         type: 'task.assigned',
         message: `${req.user.name} assigned you "${updated.title}"`,
         link: `/projects/${task.project}`,
+        email: true,
       });
     }
   }
