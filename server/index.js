@@ -16,6 +16,7 @@ const chatRoutes = require('./routes/chatRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const { initRealtime } = require('./utils/realtime');
 
@@ -92,6 +93,9 @@ app.use('/api/notifications', notificationRoutes);
 
 // Reports + CSV export (inventory/orders/HR/tasks)
 app.use('/api/reports', reportRoutes);
+
+// Home dashboard (one-call role-aware summary)
+app.use('/api/dashboard', dashboardRoutes);
 
 // Unknown API routes -> consistent { error }
 app.use('/api', (req, res) => {
