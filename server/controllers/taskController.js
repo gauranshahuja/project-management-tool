@@ -333,6 +333,61 @@ exports.deleteComment = asyncHandler(async (req, res) => {
   res.json({ message: 'Comment deleted' });
 });
 
+// ── Subtasks / checklist ────────────────────────────────────
+
+// @desc Add a subtask
+// @route POST /api/tasks/:id/subtasks  { title }
+exports.addSubtask = asyncHandler(async (req, res) => {
+  const task = await Task.findById(req.params.id);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+  if (!canModifyTask(req.user, task)) {
+    return res.status(403).json({ error: 'Not authorized to modify this task' });
+  }
+
+  const { title } = req.body;
+  if (!title || !title.trim()) {
+    return res.status(400).json({ error: 'Subtask title is required' });
+  }
+
+  task.subtasks.push({ title: title.trim(), done: false });
+  await task.save();
+  res.status(201).json(task.subtasks);
+});
+
+// @desc Toggle / rename a subtask
+// @route PATCH /api/tasks/:id/subtasks/:subId  { done?, title? }
+exports.updateSubtask = asyncHandler(async (req, res) => {
+  const task = await Task.findById(req.params.id);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+  if (!canModifyTask(req.user, task)) {
+    return res.status(403).json({ error: 'Not authorized to modify this task' });
+  }
+
+  const sub = task.subtasks.id(req.params.subId);
+  if (!sub) return res.status(404).json({ error: 'Subtask not found' });
+
+  if (req.body.done !== undefined) sub.done = Boolean(req.body.done);
+  if (req.body.title !== undefined) sub.title = String(req.body.title).trim();
+  await task.save();
+  res.json(task.subtasks);
+});
+
+// @desc Delete a subtask
+// @route DELETE /api/tasks/:id/subtasks/:subId
+exports.deleteSubtask = asyncHandler(async (req, res) => {
+  const task = await Task.findById(req.params.id);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+  if (!canModifyTask(req.user, task)) {
+    return res.status(403).json({ error: 'Not authorized to modify this task' });
+  }
+
+  const sub = task.subtasks.id(req.params.subId);
+  if (!sub) return res.status(404).json({ error: 'Subtask not found' });
+  sub.deleteOne();
+  await task.save();
+  res.json(task.subtasks);
+});
+
 // @desc Delete a task
 exports.deleteTask = asyncHandler(async (req, res) => {
   const task = await Task.findById(req.params.id);

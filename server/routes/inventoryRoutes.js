@@ -3,6 +3,7 @@ const router = express.Router();
 const inv = require('../controllers/inventoryController');
 const ord = require('../controllers/orderController');
 const ret = require('../controllers/returnController');
+const po = require('../controllers/purchaseController');
 const { protect } = require('../middleware/authMiddleware');
 
 // Locations (warehouses)
@@ -40,5 +41,11 @@ router.post('/returns', protect, ret.createReturn);
 
 // Inventory dashboard stats
 router.get('/stats', protect, ret.getInventoryStats);
+
+// Purchase orders (supplier in-flow): create -> receive (adds stock)
+router.get('/purchase-orders', protect, po.getPOs);
+router.post('/purchase-orders', protect, po.createPO);
+router.patch('/purchase-orders/:id/receive', protect, po.receivePO);
+router.patch('/purchase-orders/:id/cancel', protect, po.cancelPO);
 
 module.exports = router;

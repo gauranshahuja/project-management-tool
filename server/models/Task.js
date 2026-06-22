@@ -36,6 +36,13 @@ const taskSchema = new mongoose.Schema(
       enum: ['Low', 'Medium', 'High'],
       default: 'Medium',
     },
+    // Checklist / subtasks inside a task
+    subtasks: [
+      {
+        title: { type: String, required: true },
+        done: { type: Boolean, default: false },
+      },
+    ],
     dueDate: Date,
   },
   { timestamps: true }

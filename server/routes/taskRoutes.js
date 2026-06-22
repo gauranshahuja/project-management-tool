@@ -10,6 +10,9 @@ const {
   getComments,
   addComment,
   deleteComment,
+  addSubtask,
+  updateSubtask,
+  deleteSubtask,
 } = require('../controllers/taskController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -30,6 +33,11 @@ router.route('/project/:projectId/stats')
 router.route('/:id/comments')
   .get(protect, getComments)    // List comments for a task
   .post(protect, addComment);   // Add a comment
+
+// Subtasks / checklist
+router.post('/:id/subtasks', protect, addSubtask);
+router.patch('/:id/subtasks/:subId', protect, updateSubtask);
+router.delete('/:id/subtasks/:subId', protect, deleteSubtask);
 
 router.route('/:id')
   .put(protect, updateTask)     // Update task by task ID
