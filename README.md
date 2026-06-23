@@ -1,11 +1,22 @@
-# ProjectHub — Multi-Tenant Project Management SaaS
+<div align="center">
 
-A full-stack, multi-tenant project management platform where companies run their projects,
-teams, and tasks in isolated workspaces. Built with the MERN stack (MongoDB, Express 5,
-React 19, Node.js) with role-based access control and an invite-based onboarding flow.
+# 🏢 ProjectHub
 
-**Live demo:** [managementtool.netlify.app](https://managementtool.netlify.app) ·
-**API:** [Render](https://project-management-tool-9yl1.onrender.com)
+### Multi-Tenant Project Management SaaS
+
+A full-stack, multi-tenant platform where each company runs its projects, teams, and tasks in an **isolated workspace** — with four-tier role-based access control and invite-based onboarding. Built on the MERN stack.
+
+![React](https://img.shields.io/badge/React_19-20232A?style=flat-square&logo=react&logoColor=61DAFB)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express_5-000000?style=flat-square&logo=express&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat-square&logo=mongodb&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=flat-square&logo=firebase&logoColor=black)
+![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=flat-square&logo=socket.io&logoColor=white)
+
+[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-2ea44f?style=for-the-badge)](https://projecthub-client.web.app)
+
+</div>
 
 ---
 
@@ -62,7 +73,7 @@ React 19, Node.js) with role-based access control and an invite-based onboarding
 | Database   | MongoDB (Atlas in production, in-memory server for local dev) |
 | Auth       | JWT, bcrypt, Firebase Auth (social login) |
 | Security   | helmet, express-rate-limit, role-based middleware |
-| Deployment | Netlify (client) · Render (API) |
+| Deployment | Firebase Hosting (client) · Node host (API) |
 
 ---
 

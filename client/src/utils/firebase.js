@@ -9,15 +9,17 @@ import {
   linkWithCredential
 } from "firebase/auth";
 
-// Firebase configuration
+// Firebase configuration — values come from environment variables (see client/.env.example).
+// Firebase web config is a public client identifier, but keeping it in env avoids
+// hardcoding a specific project in the repo.
 const firebaseConfig = {
-  apiKey: "AIzaSyDNR0nJw0uo-Cm4kdUwhttchqcdu0sg8dQ",
-  authDomain: "project-management-tool-82a1c.firebaseapp.com",
-  projectId: "project-management-tool-82a1c",
-  storageBucket: "project-management-tool-82a1c.appspot.com",
-  messagingSenderId: "261075120730",
-  appId: "1:261075120730:web:47f49d8383255953a75e63",
-  measurementId: "G-ZTX9M41WM2"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
