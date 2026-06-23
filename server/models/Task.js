@@ -43,6 +43,12 @@ const taskSchema = new mongoose.Schema(
         done: { type: Boolean, default: false },
       },
     ],
+    // Recurrence: when a recurring task is completed, the next one auto-creates.
+    recurrence: {
+      type: String,
+      enum: ['none', 'daily', 'weekly', 'monthly'],
+      default: 'none',
+    },
     dueDate: Date,
   },
   { timestamps: true }

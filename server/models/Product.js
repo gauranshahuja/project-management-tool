@@ -16,6 +16,12 @@ const productSchema = new mongoose.Schema(
     unit: { type: String, default: 'pcs' },
     // Low-stock alert threshold (total across locations)
     reorderLevel: { type: Number, default: 0 },
+    // Preferred supplier (a Contact of type 'supplier') for reordering
+    supplier: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Contact',
+      default: null,
+    },
   },
   { timestamps: true }
 );

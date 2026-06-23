@@ -131,7 +131,7 @@ exports.createTask = asyncHandler(async (req, res) => {
   const project = await loadAccessibleProject(req, res);
   if (!project) return;
 
-  const { title, description, status, priority, dueDate, assignedTo } = req.body;
+  const { title, description, status, priority, dueDate, assignedTo, recurrence } = req.body;
 
   if (!title) {
     return res.status(400).json({ error: 'Task title is required' });
@@ -156,6 +156,7 @@ exports.createTask = asyncHandler(async (req, res) => {
     assignedTo: assignedTo || null,
     title,
     description,
+    recurrence,
     status,
     priority,
     dueDate,
@@ -198,7 +199,7 @@ exports.updateTask = asyncHandler(async (req, res) => {
     return res.status(403).json({ error: 'Not authorized to modify this task' });
   }
 
-  const { title, description, status, priority, dueDate, assignedTo } = req.body;
+  const { title, description, status, priority, dueDate, assignedTo, recurrence } = req.body;
   const updates = {};
 
   if (title !== undefined) updates.title = title;
@@ -206,6 +207,7 @@ exports.updateTask = asyncHandler(async (req, res) => {
   if (status !== undefined) updates.status = status;
   if (priority !== undefined) updates.priority = priority;
   if (dueDate !== undefined) updates.dueDate = dueDate;
+  if (recurrence !== undefined) updates.recurrence = recurrence;
 
   let assignee = null;
   if (assignedTo !== undefined) {
@@ -234,6 +236,28 @@ exports.updateTask = asyncHandler(async (req, res) => {
       entityType: 'task',
       entityId: updated._id,
     });
+
+    // Recurring task: spawn the next occurrence with a shifted due date.
+    if (updated.recurrence && updated.recurrence !== 'none') {
+      const base = updated.dueDate ? new Date(updated.dueDate) : new Date();
+      const next = new Date(base);
+      if (updated.recurrence === 'daily') next.setDate(next.getDate() + 1);
+      else if (updated.recurrence === 'weekly') next.setDate(next.getDate() + 7);
+      else if (updated.recurrence === 'monthly') next.setMonth(next.getMonth() + 1);
+
+      await Task.create({
+        project: updated.project,
+        user: req.user._id,
+        organization: req.user.organization,
+        assignedTo: updated.assignedTo?._id || updated.assignedTo || null,
+        title: updated.title,
+        description: updated.description,
+        status: 'Not Started',
+        priority: updated.priority,
+        recurrence: updated.recurrence,
+        dueDate: next,
+      });
+    }
   }
   if (assignee) {
     logActivity(req.user, 'task.assigned', `assigned "${updated.title}" to ${assignee.name}`, {

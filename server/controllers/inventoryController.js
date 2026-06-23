@@ -79,7 +79,7 @@ exports.getProducts = asyncHandler(async (req, res) => {
 // @route POST /api/inventory/products  { sku, name, barcode?, category?, unit?, reorderLevel? }
 // Any signed-in member can add a product (warehouse staff add while stocking).
 exports.createProduct = asyncHandler(async (req, res) => {
-  const { sku, name, barcode, category, unit, reorderLevel } = req.body;
+  const { sku, name, barcode, category, unit, reorderLevel, supplier } = req.body;
   if (!sku || !name) {
     return res.status(400).json({ error: 'SKU and name are required' });
   }
@@ -98,6 +98,7 @@ exports.createProduct = asyncHandler(async (req, res) => {
     category: category || '',
     unit: unit || 'pcs',
     reorderLevel: reorderLevel || 0,
+    supplier: supplier || null,
   });
   logActivity(req.user, 'inventory.product_created', `added product "${name}" (${sku})`, {
     entityType: 'product',
@@ -117,7 +118,7 @@ exports.updateProduct = asyncHandler(async (req, res) => {
   });
   if (!product) return res.status(404).json({ error: 'Product not found' });
 
-  ['name', 'barcode', 'category', 'unit', 'reorderLevel'].forEach((f) => {
+  ['name', 'barcode', 'category', 'unit', 'reorderLevel', 'supplier'].forEach((f) => {
     if (req.body[f] !== undefined) product[f] = req.body[f];
   });
   await product.save();
