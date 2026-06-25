@@ -49,6 +49,15 @@ const taskSchema = new mongoose.Schema(
       enum: ['none', 'daily', 'weekly', 'monthly'],
       default: 'none',
     },
+    // Time tracking: completed sessions + the currently-running timer (per user).
+    timeLogs: [
+      {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        start: { type: Date, required: true },
+        end: { type: Date, default: null },
+        seconds: { type: Number, default: 0 },
+      },
+    ],
     dueDate: Date,
   },
   { timestamps: true }

@@ -412,6 +412,84 @@ exports.deleteSubtask = asyncHandler(async (req, res) => {
   res.json(task.subtasks);
 });
 
+// ── Time tracking ───────────────────────────────────────────
+
+// Total tracked seconds across all logs (running one counted live).
+const totalSeconds = (task) =>
+  task.timeLogs.reduce((sum, l) => {
+    if (l.end) return sum + (l.seconds || 0);
+    return sum + Math.floor((Date.now() - new Date(l.start)) / 1000);
+  }, 0);
+
+const timeShape = (task, userId) => {
+  const running = task.timeLogs.find(
+    (l) => !l.end && String(l.user) === String(userId)
+  );
+  return {
+    totalSeconds: totalSeconds(task),
+    running: running
+      ? { start: running.start, seconds: Math.floor((Date.now() - new Date(running.start)) / 1000) }
+      : null,
+    logs: task.timeLogs.map((l) => ({
+      user: l.user,
+      start: l.start,
+      end: l.end,
+      seconds: l.end ? l.seconds : Math.floor((Date.now() - new Date(l.start)) / 1000),
+    })),
+  };
+};
+
+// @desc Start a timer on a task (one per user)
+// @route POST /api/tasks/:id/timer/start
+exports.startTimer = asyncHandler(async (req, res) => {
+  const task = await Task.findById(req.params.id);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+  if (!canModifyTask(req.user, task)) {
+    return res.status(403).json({ error: 'Not authorized to track this task' });
+  }
+
+  const already = task.timeLogs.find(
+    (l) => !l.end && String(l.user) === String(req.user._id)
+  );
+  if (already) return res.status(400).json({ error: 'Timer already running' });
+
+  task.timeLogs.push({ user: req.user._id, start: new Date() });
+  await task.save();
+  res.status(201).json(timeShape(task, req.user._id));
+});
+
+// @desc Stop the running timer for this user
+// @route POST /api/tasks/:id/timer/stop
+exports.stopTimer = asyncHandler(async (req, res) => {
+  const task = await Task.findById(req.params.id);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+  if (!canModifyTask(req.user, task)) {
+    return res.status(403).json({ error: 'Not authorized to track this task' });
+  }
+
+  const running = task.timeLogs.find(
+    (l) => !l.end && String(l.user) === String(req.user._id)
+  );
+  if (!running) return res.status(400).json({ error: 'No running timer' });
+
+  running.end = new Date();
+  running.seconds = Math.floor((running.end - new Date(running.start)) / 1000);
+  await task.save();
+  res.json(timeShape(task, req.user._id));
+});
+
+// @desc Get time summary for a task
+// @route GET /api/tasks/:id/timer
+exports.getTimer = asyncHandler(async (req, res) => {
+  const task = await Task.findById(req.params.id);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+  const project = await Project.findById(task.project);
+  if (!project || !canAccessProject(req.user, project)) {
+    return res.status(403).json({ error: 'Not authorized' });
+  }
+  res.json(timeShape(task, req.user._id));
+});
+
 // @desc Delete a task
 exports.deleteTask = asyncHandler(async (req, res) => {
   const task = await Task.findById(req.params.id);

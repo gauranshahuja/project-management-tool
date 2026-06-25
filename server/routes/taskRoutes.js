@@ -13,6 +13,9 @@ const {
   addSubtask,
   updateSubtask,
   deleteSubtask,
+  startTimer,
+  stopTimer,
+  getTimer,
 } = require('../controllers/taskController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -38,6 +41,11 @@ router.route('/:id/comments')
 router.post('/:id/subtasks', protect, addSubtask);
 router.patch('/:id/subtasks/:subId', protect, updateSubtask);
 router.delete('/:id/subtasks/:subId', protect, deleteSubtask);
+
+// Time tracking (start/stop timer + summary)
+router.get('/:id/timer', protect, getTimer);
+router.post('/:id/timer/start', protect, startTimer);
+router.post('/:id/timer/stop', protect, stopTimer);
 
 router.route('/:id')
   .put(protect, updateTask)     // Update task by task ID

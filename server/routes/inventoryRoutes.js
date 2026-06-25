@@ -44,6 +44,7 @@ router.get('/stats', protect, ret.getInventoryStats);
 
 // Purchase orders (supplier in-flow): create -> receive (adds stock)
 router.get('/purchase-orders', protect, po.getPOs);
+router.post('/purchase-orders/auto-reorder', protect, po.autoReorder);
 router.post('/purchase-orders', protect, po.createPO);
 router.patch('/purchase-orders/:id/receive', protect, po.receivePO);
 router.patch('/purchase-orders/:id/cancel', protect, po.cancelPO);

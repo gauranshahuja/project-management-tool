@@ -1,8 +1,10 @@
+const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const Location = require('../models/Location');
 const BatchInventory = require('../models/BatchInventory');
 const StockLedger = require('../models/StockLedger');
 const PurchaseOrder = require('../models/PurchaseOrder');
+const Contact = require('../models/Contact');
 const asyncHandler = require('../utils/asyncHandler');
 const logActivity = require('../utils/logActivity');
 
@@ -58,6 +60,89 @@ exports.createPO = asyncHandler(async (req, res) => {
 
   logActivity(req.user, 'po.created', `created PO ${poNo} (${quantity} ${product.sku}${supplier ? ` from ${supplier}` : ''})`);
   res.status(201).json(po);
+});
+
+// @route POST /api/inventory/purchase-orders/auto-reorder   (Owner/Admin/Manager)
+// Scans low-stock products and drafts a PO for each one that isn't already
+// covered by an open (Ordered) PO. Tops stock up to 2x the reorder level.
+// Body: { locationId }  — where the reordered stock should land.
+exports.autoReorder = asyncHandler(async (req, res) => {
+  if (!isManager(req.user)) {
+    return res.status(403).json({ error: 'Only managers can run auto-reorder' });
+  }
+  const { locationId } = req.body;
+  if (!locationId) return res.status(400).json({ error: 'locationId is required' });
+
+  const location = await Location.findOne({
+    _id: locationId,
+    organization: req.user.organization,
+  });
+  if (!location) return res.status(404).json({ error: 'Location not found' });
+
+  const orgId = new mongoose.Types.ObjectId(req.user.organization);
+
+  // Current total stock per product across all locations.
+  const stockRows = await BatchInventory.aggregate([
+    { $match: { organization: orgId } },
+    { $group: { _id: '$product', totalQty: { $sum: '$qty' } } },
+  ]);
+  const qtyByProduct = new Map(stockRows.map((r) => [String(r._id), r.totalQty]));
+
+  // Products that have a reorder level set.
+  const products = await Product.find({
+    organization: req.user.organization,
+    reorderLevel: { $gt: 0 },
+  }).populate('supplier', 'name');
+
+  // Products that already have an open PO — skip those (don't double-order).
+  const openPOs = await PurchaseOrder.find({
+    organization: req.user.organization,
+    status: 'Ordered',
+  }).select('product');
+  const openSet = new Set(openPOs.map((p) => String(p.product)));
+
+  const created = [];
+  const skipped = [];
+
+  for (const product of products) {
+    const current = qtyByProduct.get(String(product._id)) || 0;
+    if (current > product.reorderLevel) continue; // healthy stock
+    if (openSet.has(String(product._id))) {
+      skipped.push({ sku: product.sku, reason: 'open PO exists' });
+      continue;
+    }
+
+    const target = product.reorderLevel * 2;
+    const reorderQty = Math.max(target - current, 1);
+    const poNo = await nextNumber(PurchaseOrder, req.user.organization, 'PO');
+
+    const po = await PurchaseOrder.create({
+      organization: req.user.organization,
+      poNo,
+      supplier: product.supplier ? product.supplier.name : '',
+      location: locationId,
+      product: product._id,
+      sku: product.sku,
+      qty: reorderQty,
+      createdBy: req.user._id,
+    });
+    created.push(po);
+    openSet.add(String(product._id)); // guard within this same run
+  }
+
+  if (created.length) {
+    logActivity(
+      req.user,
+      'po.auto_reorder',
+      `auto-reorder drafted ${created.length} PO(s) for low stock`
+    );
+  }
+
+  res.status(created.length ? 201 : 200).json({
+    createdCount: created.length,
+    created,
+    skipped,
+  });
 });
 
 // @route GET /api/inventory/purchase-orders?status=&limit=
