@@ -32,6 +32,11 @@ const loadAccessibleProject = async (req, res) => {
   return project;
 };
 
+const cleanLabels = (labels) =>
+  Array.isArray(labels)
+    ? [...new Set(labels.map((l) => String(l).trim()).filter(Boolean))]
+    : [];
+
 // Task modify: Owner/Admin, task creator, ya assignee
 const canModifyTask = (user, task) => {
   if (['Owner', 'Admin'].includes(user.role)) return true;
@@ -46,7 +51,7 @@ exports.getTasks = asyncHandler(async (req, res) => {
 
   const page = Math.max(parseInt(req.query.page) || 1, 1);
   const limit = Math.max(parseInt(req.query.limit) || 10, 1);
-  const { status, search, assignedTo, priority } = req.query;
+  const { status, search, assignedTo, priority, label } = req.query;
 
   const query = { project: project._id };
 
@@ -56,6 +61,10 @@ exports.getTasks = asyncHandler(async (req, res) => {
 
   if (priority) {
     query.priority = priority;
+  }
+
+  if (label) {
+    query.labels = label;
   }
 
   if (assignedTo) {
@@ -116,6 +125,15 @@ exports.getTaskStats = asyncHandler(async (req, res) => {
   res.json(stats);
 });
 
+// @desc Distinct labels used in a project (filter dropdown ke liye)
+exports.getProjectLabels = asyncHandler(async (req, res) => {
+  const project = await loadAccessibleProject(req, res);
+  if (!project) return;
+
+  const labels = await Task.distinct('labels', { project: project._id });
+  res.json(labels.filter(Boolean).sort());
+});
+
 // @desc Tasks assigned to me (org-wide, Member dashboard ke liye)
 // @route GET /api/tasks/me
 exports.getMyTasks = asyncHandler(async (req, res) => {
@@ -131,7 +149,7 @@ exports.createTask = asyncHandler(async (req, res) => {
   const project = await loadAccessibleProject(req, res);
   if (!project) return;
 
-  const { title, description, status, priority, dueDate, assignedTo, recurrence } = req.body;
+  const { title, description, status, priority, dueDate, assignedTo, recurrence, labels } = req.body;
 
   if (!title) {
     return res.status(400).json({ error: 'Task title is required' });
@@ -160,6 +178,7 @@ exports.createTask = asyncHandler(async (req, res) => {
     status,
     priority,
     dueDate,
+    labels: cleanLabels(labels),
   });
 
   logActivity(req.user, 'task.created', `created task "${title}" in ${project.title}`, {
@@ -199,7 +218,7 @@ exports.updateTask = asyncHandler(async (req, res) => {
     return res.status(403).json({ error: 'Not authorized to modify this task' });
   }
 
-  const { title, description, status, priority, dueDate, assignedTo, recurrence } = req.body;
+  const { title, description, status, priority, dueDate, assignedTo, recurrence, labels } = req.body;
   const updates = {};
 
   if (title !== undefined) updates.title = title;
@@ -208,6 +227,7 @@ exports.updateTask = asyncHandler(async (req, res) => {
   if (priority !== undefined) updates.priority = priority;
   if (dueDate !== undefined) updates.dueDate = dueDate;
   if (recurrence !== undefined) updates.recurrence = recurrence;
+  if (labels !== undefined) updates.labels = cleanLabels(labels);
 
   let assignee = null;
   if (assignedTo !== undefined) {

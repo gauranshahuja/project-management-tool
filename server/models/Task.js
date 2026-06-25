@@ -36,6 +36,10 @@ const taskSchema = new mongoose.Schema(
       enum: ['Low', 'Medium', 'High'],
       default: 'Medium',
     },
+    labels: {
+      type: [String],
+      default: [],
+    },
     // Checklist / subtasks inside a task
     subtasks: [
       {

@@ -16,6 +16,7 @@ const {
   startTimer,
   stopTimer,
   getTimer,
+  getProjectLabels,
 } = require('../controllers/taskController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -32,6 +33,8 @@ router.route('/project/:projectId')
 
 router.route('/project/:projectId/stats')
   .get(protect, getTaskStats);  // Get task stats by status
+
+router.get('/project/:projectId/labels', protect, getProjectLabels);
 
 router.route('/:id/comments')
   .get(protect, getComments)    // List comments for a task

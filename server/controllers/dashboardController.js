@@ -3,6 +3,7 @@ const Task = require('../models/Task');
 const Project = require('../models/project');
 const Leave = require('../models/Leave');
 const Order = require('../models/Order');
+const PurchaseOrder = require('../models/PurchaseOrder');
 const BatchInventory = require('../models/BatchInventory');
 const Product = require('../models/Product');
 const Attendance = require('../models/Attendance');
@@ -12,6 +13,15 @@ const asyncHandler = require('../utils/asyncHandler');
 const isManager = (user) => ['Owner', 'Admin'].includes(user.role);
 const todayKey = () => new Date().toISOString().slice(0, 10);
 
+// Monday 00:00 of the current week
+const weekStart = () => {
+  const d = new Date();
+  const day = (d.getDay() + 6) % 7; // Mon=0 .. Sun=6
+  d.setDate(d.getDate() - day);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
 // @desc One-call home summary, tailored to the user's role.
 // @route GET /api/dashboard
 exports.getHome = asyncHandler(async (req, res) => {
@@ -20,7 +30,7 @@ exports.getHome = asyncHandler(async (req, res) => {
   const manager = isManager(req.user);
 
   // ── Everyone: personal widgets ──
-  const [myOpenTasks, myOverdue, todayAttendance, recentActivity] = await Promise.all([
+  const [myOpenTasks, myOverdue, todayAttendance, recentActivity, trackedAgg] = await Promise.all([
     Task.countDocuments({
       organization: orgId,
       assignedTo: userId,
@@ -37,6 +47,12 @@ exports.getHome = asyncHandler(async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(6)
       .lean(),
+    Task.aggregate([
+      { $match: { organization: orgId } },
+      { $unwind: '$timeLogs' },
+      { $match: { 'timeLogs.user': userId, 'timeLogs.end': { $ne: null }, 'timeLogs.start': { $gte: weekStart() } } },
+      { $group: { _id: null, seconds: { $sum: '$timeLogs.seconds' } } },
+    ]),
   ]);
 
   const summary = {
@@ -46,6 +62,7 @@ exports.getHome = asyncHandler(async (req, res) => {
       overdueTasks: myOverdue,
       checkedInToday: Boolean(todayAttendance?.checkIn),
       checkedOutToday: Boolean(todayAttendance?.checkOut),
+      trackedThisWeekSeconds: trackedAgg[0]?.seconds || 0,
     },
     recentActivity: recentActivity.map((a) => ({
       actorName: a.actorName,
@@ -66,12 +83,14 @@ exports.getHome = asyncHandler(async (req, res) => {
       openTasksOrg,
       pendingLeaves,
       ordersThisMonth,
+      openPurchaseOrders,
       lowStock,
     ] = await Promise.all([
       Project.countDocuments({ organization: orgId }),
       Task.countDocuments({ organization: orgId, status: { $ne: 'Completed' } }),
       Leave.countDocuments({ organization: orgId, status: 'Pending' }),
       Order.countDocuments({ organization: orgId, createdAt: { $gte: monthStart } }),
+      PurchaseOrder.countDocuments({ organization: orgId, status: 'Ordered' }),
       // products whose total stock <= reorderLevel (>0)
       BatchInventory.aggregate([
         { $match: { organization: orgId } },
@@ -89,6 +108,7 @@ exports.getHome = asyncHandler(async (req, res) => {
       openTasks: openTasksOrg,
       pendingLeaves,
       ordersThisMonth,
+      openPurchaseOrders,
       lowStock,
     };
   }
