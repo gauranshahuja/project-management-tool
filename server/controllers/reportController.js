@@ -5,6 +5,7 @@ const BatchInventory = require('../models/BatchInventory');
 const Attendance = require('../models/Attendance');
 const Payslip = require('../models/Payslip');
 const Task = require('../models/Task');
+const mongoose = require('mongoose');
 const asyncHandler = require('../utils/asyncHandler');
 const { toCsv, sendCsv } = require('../utils/csv');
 
@@ -194,5 +195,60 @@ exports.tasksReport = asyncHandler(async (req, res) => {
     { label: 'Assigned To', get: (r) => r.assignedTo?.name || 'Unassigned' },
     { label: 'Due Date', get: (r) => fmtDate(r.dueDate) },
     { label: 'Created', get: (r) => fmtDate(r.createdAt) },
+  ]);
+});
+
+const hrs = (seconds) => (seconds / 3600).toFixed(2);
+
+// @route GET /api/reports/time?from=&to=   (logged hours per person per task)
+exports.timeReport = asyncHandler(async (req, res) => {
+  if (!guardManager(req, res)) return;
+  const orgId = new mongoose.Types.ObjectId(req.user.organization);
+
+  // Date range applies to each completed log's start time.
+  const range = {};
+  if (req.query.from) range.$gte = new Date(req.query.from);
+  if (req.query.to) {
+    const to = new Date(req.query.to);
+    to.setHours(23, 59, 59, 999);
+    range.$lte = to;
+  }
+  const logMatch = { 'timeLogs.end': { $ne: null } };
+  if (Object.keys(range).length) logMatch['timeLogs.start'] = range;
+
+  const rows = await Task.aggregate([
+    { $match: { organization: orgId } },
+    { $unwind: '$timeLogs' },
+    { $match: logMatch },
+    {
+      $group: {
+        _id: { user: '$timeLogs.user', task: '$_id' },
+        title: { $first: '$title' },
+        project: { $first: '$project' },
+        seconds: { $sum: '$timeLogs.seconds' },
+        sessions: { $sum: 1 },
+      },
+    },
+    { $lookup: { from: 'users', localField: '_id.user', foreignField: '_id', as: 'u' } },
+    { $lookup: { from: 'projects', localField: 'project', foreignField: '_id', as: 'p' } },
+    {
+      $project: {
+        _id: 0,
+        user: { $ifNull: [{ $arrayElemAt: ['$u.name', 0] }, 'Unknown'] },
+        task: '$title',
+        project: { $ifNull: [{ $arrayElemAt: ['$p.title', 0] }, ''] },
+        seconds: 1,
+        sessions: 1,
+      },
+    },
+    { $sort: { user: 1, seconds: -1 } },
+  ]);
+
+  respond(req, res, 'time-tracking', rows, [
+    { label: 'Employee', key: 'user' },
+    { label: 'Project', key: 'project' },
+    { label: 'Task', key: 'task' },
+    { label: 'Sessions', key: 'sessions' },
+    { label: 'Hours', get: (r) => hrs(r.seconds) },
   ]);
 });
