@@ -19,6 +19,8 @@ const orderSchema = new mongoose.Schema(
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
     sku: { type: String, required: true },
     qty: { type: Number, required: true },
+    unitPrice: { type: Number, default: 0 }, // snapshot at fulfilment
+    amount: { type: Number, default: 0 }, // unitPrice * qty
     // Which batches the qty came from (FEFO breakdown) — for traceability
     batchBreakdown: [
       {

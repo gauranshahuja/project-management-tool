@@ -47,7 +47,7 @@ const fefoBatches = async (orgId, productId, locationId) => {
 // @route POST /api/inventory/orders
 // { productId, locationId, qty, source?, customer? }  -> FEFO auto-deduct
 exports.createOrder = asyncHandler(async (req, res) => {
-  const { productId, locationId, qty, source, customer } = req.body;
+  const { productId, locationId, qty, source, customer, unitPrice } = req.body;
   const quantity = Number(qty);
 
   if (!productId || !locationId || !(quantity > 0)) {
@@ -89,6 +89,9 @@ exports.createOrder = asyncHandler(async (req, res) => {
     remaining -= take;
   }
 
+  // Price snapshot: explicit override, else the product's current price.
+  const price = unitPrice !== undefined ? Number(unitPrice) : product.price || 0;
+
   const orderNo = await nextNumber(Order, req.user.organization, 'ORD');
   const order = await Order.create({
     organization: req.user.organization,
@@ -98,6 +101,8 @@ exports.createOrder = asyncHandler(async (req, res) => {
     product: productId,
     sku: product.sku,
     qty: quantity,
+    unitPrice: price,
+    amount: price * quantity,
     batchBreakdown: breakdown,
     customer: customer || {},
     fulfilledBy: req.user._id,

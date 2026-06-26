@@ -83,6 +83,7 @@ exports.getHome = asyncHandler(async (req, res) => {
       openTasksOrg,
       pendingLeaves,
       ordersThisMonth,
+      revenueAgg,
       openPurchaseOrders,
       lowStock,
     ] = await Promise.all([
@@ -90,6 +91,11 @@ exports.getHome = asyncHandler(async (req, res) => {
       Task.countDocuments({ organization: orgId, status: { $ne: 'Completed' } }),
       Leave.countDocuments({ organization: orgId, status: 'Pending' }),
       Order.countDocuments({ organization: orgId, createdAt: { $gte: monthStart } }),
+      // revenue this month, cancelled orders excluded
+      Order.aggregate([
+        { $match: { organization: orgId, createdAt: { $gte: monthStart }, status: { $ne: 'Cancelled' } } },
+        { $group: { _id: null, total: { $sum: '$amount' } } },
+      ]),
       PurchaseOrder.countDocuments({ organization: orgId, status: 'Ordered' }),
       // products whose total stock <= reorderLevel (>0)
       BatchInventory.aggregate([
@@ -108,6 +114,7 @@ exports.getHome = asyncHandler(async (req, res) => {
       openTasks: openTasksOrg,
       pendingLeaves,
       ordersThisMonth,
+      revenueThisMonth: revenueAgg[0]?.total || 0,
       openPurchaseOrders,
       lowStock,
     };

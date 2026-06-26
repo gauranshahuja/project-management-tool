@@ -59,6 +59,8 @@ exports.ordersReport = asyncHandler(async (req, res) => {
     { label: 'Product', get: (r) => r.product?.name || r.sku },
     { label: 'SKU', key: 'sku' },
     { label: 'Qty', key: 'qty' },
+    { label: 'Unit Price', get: (r) => (r.unitPrice || 0).toFixed(2) },
+    { label: 'Amount', get: (r) => (r.amount || 0).toFixed(2) },
     { label: 'Location', get: (r) => r.location?.name || '' },
     { label: 'Customer', get: (r) => r.customer?.name || '' },
     { label: 'Status', key: 'status' },

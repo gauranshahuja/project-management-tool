@@ -14,6 +14,7 @@ const productSchema = new mongoose.Schema(
     barcode: { type: String, default: '', trim: true }, // GTIN / barcode
     category: { type: String, default: '' },
     unit: { type: String, default: 'pcs' },
+    price: { type: Number, default: 0 }, // selling price per unit
     // Low-stock alert threshold (total across locations)
     reorderLevel: { type: Number, default: 0 },
     // Preferred supplier (a Contact of type 'supplier') for reordering
