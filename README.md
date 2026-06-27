@@ -1,10 +1,14 @@
 <div align="center">
 
-# 🏢 ProjectHub
+# ProjectHub
 
-### Multi-Tenant Project Management SaaS
+### Multi-Tenant Business Operating System
 
-A full-stack, multi-tenant platform where each company runs its projects, teams, and tasks in an **isolated workspace** — with four-tier role-based access control and invite-based onboarding. Built on the MERN stack.
+A full-stack, multi-tenant platform where each company runs its entire operation —
+**projects, inventory, orders, HR, and team communication** — from one isolated
+workspace. Four-tier role-based access control, invite-based onboarding, realtime
+presence and notifications, and CSV reporting across every module. Built on the
+MERN stack, containerized and scale-ready.
 
 ![React](https://img.shields.io/badge/React_19-20232A?style=flat-square&logo=react&logoColor=61DAFB)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)
@@ -42,12 +46,30 @@ A full-stack, multi-tenant platform where each company runs its projects, teams,
 
   \* Admins cannot manage other Admins — only the Owner can.
 
-### Project & task management
+### Projects & tasks
 - Projects with status, due dates, descriptions, and member assignment.
-- Task workspace per project: create, inline-edit, delete, assign to teammates,
-  with search, status filters, pagination, and live status statistics.
-- **My Tasks:** a cross-project view of everything assigned to you, with one-click
-  status updates.
+- Task workspace per project: create, inline-edit, assign, with search, status and
+  label filters, pagination, and live status statistics.
+- Kanban board, subtasks/checklists, labels, recurring tasks, and per-task time
+  tracking (start/stop timers with logged hours).
+- **My Tasks:** a cross-project view of everything assigned to you.
+
+### Inventory & orders
+- Product catalog with SKU, pricing, barcode, units, and reorder levels.
+- Multi-warehouse stock with batch tracking and FEFO (first-expiry-first-out).
+- Purchase orders (supplier in-flow) with low-stock auto-reorder.
+- Customer orders with FEFO auto-deduct and revenue tracking; returns and
+  warehouse-to-warehouse transfers; a full stock ledger for traceability.
+
+### People (HR)
+- Employee profiles, attendance check-in/out, leave requests and approvals,
+  and monthly payroll with payslips.
+
+### Communication & insights
+- Encrypted team chat, per-user notifications (in-app bell + email), and a live
+  activity feed with presence.
+- Role-aware home dashboard, analytics, and CSV reports across orders, time,
+  payroll, stock, and tasks.
 
 ### Authentication
 - Email/password auth with bcrypt hashing and JWT sessions.
@@ -68,7 +90,7 @@ A full-stack, multi-tenant platform where each company runs its projects, teams,
 
 | Layer      | Technology |
 | ---------- | ---------- |
-| Frontend   | React 19, Vite 7, Tailwind CSS, React Router 7, Axios, Framer Motion |
+| Frontend   | React 19, Vite 7, Tailwind CSS, React Router 7, Axios |
 | Backend    | Node.js, Express 5, Mongoose 8 |
 | Database   | MongoDB (Atlas in production, in-memory server for local dev) |
 | Auth       | JWT, bcrypt, Firebase Auth (social login) |
@@ -176,7 +198,11 @@ All endpoints are prefixed with `/api`. Protected routes require
 | Auth | `POST /users/register` · `POST /users/login` · `POST /users/social-login` · `GET /users/profile` |
 | Organization | `GET /org` · `GET /org/members` · `POST /org/invites` · `GET /org/invites` · `DELETE /org/invites/:id` · `GET /org/invites/info?token=` (public) · `PATCH /org/members/:id/role` · `DELETE /org/members/:id` |
 | Projects | `GET /projects` · `POST /projects` · `PUT /projects/:id` · `DELETE /projects/:id` |
-| Tasks | `GET /tasks/project/:projectId` (paginated, searchable) · `GET /tasks/project/:projectId/stats` · `POST /tasks/project/:projectId` · `PUT /tasks/:id` · `DELETE /tasks/:id` · `GET /tasks/me` |
+| Tasks | `GET /tasks/project/:projectId` (paginated, searchable) · `GET /tasks/project/:projectId/stats` · `POST /tasks/project/:projectId` · `PUT /tasks/:id` · `DELETE /tasks/:id` · `GET /tasks/me` · timers, subtasks, labels |
+| Inventory | `/inventory/products` · `/inventory/locations` · `/inventory/stock` · `/inventory/purchase-orders` · `/inventory/orders` · `/inventory/transfers` · `/inventory/ledger` |
+| HR | `/hr/employees` · `/hr/attendance` · `/hr/leave` · `/hr/payroll` |
+| Communication | `/chat` · `/notifications` · `/contacts` |
+| Insights | `/dashboard` · `/reports/*` (CSV export) |
 
 Errors always return `{ "error": "<message>" }` with appropriate status codes
 (400 validation, 401 unauthenticated, 403 forbidden, 404 not found).
@@ -217,11 +243,17 @@ and add that frontend URL to `ALLOWED_ORIGINS` on the backend.
 
 ## Roadmap
 
-- [ ] Email delivery for invites (currently link-sharing)
-- [ ] HR module: employee records, attendance, leave tracking
-- [ ] Activity feed and notifications
+- [x] HR module: employees, attendance, leave, payroll
+- [x] Inventory, purchase orders, customer orders, returns, transfers
+- [x] Activity feed, notifications, and email delivery
+- [x] Reports and CSV export across modules
+- [ ] Console-style UI rebuild (Google Cloud–inspired navigation)
+- [ ] Guided multi-step onboarding with per-company service catalog
+- [ ] In-app guide and documentation site
 - [ ] Custom roles and granular permissions
 - [ ] Billing and subscription tiers
+
+See [ROADMAP.md](ROADMAP.md) for the detailed plan.
 
 ---
 
