@@ -10,7 +10,6 @@ const Navbar = ({ onLogin, onRegister }) => {
   const navLinks = [
     { name: "Operating Model", to: "operating-system" },
     { name: "Features", to: "features" },
-    { name: "Proof", to: "testimonials" },
     { name: "Trust", to: "contact" },
   ];
 

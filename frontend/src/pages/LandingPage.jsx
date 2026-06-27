@@ -1,24 +1,15 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import {
-  FiActivity,
   FiBarChart2,
   FiBriefcase,
   FiCheckCircle,
-  FiClock,
-  FiLayers,
   FiLock,
   FiTrendingUp,
-  FiUsers,
 } from "react-icons/fi";
 import Navbar from "../components/Navbar";
+import FeatureSection from "../components/FeatureSection";
 
 const AuthModal = lazy(() => import("../components/AuthModal"));
-
-const metrics = [
-  { label: "Live workstreams", value: "12" },
-  { label: "On-time delivery", value: "94%" },
-  { label: "Open blockers", value: "3" },
-];
 
 const operatingCards = [
   {
@@ -45,12 +36,6 @@ const operatingCards = [
     text: "Owners, admins, managers, and members each see the controls they should use and nothing more.",
     accent: "text-rose-600 dark:text-rose-300",
   },
-];
-
-const activityRows = [
-  ["High priority", "Vendor onboarding", "In Progress", "Mon"],
-  ["Owner review", "Quarterly roadmap", "Not Started", "Thu"],
-  ["Completed", "Payroll policy draft", "Completed", "Today"],
 ];
 
 const trustSignals = [
@@ -115,120 +100,6 @@ const LandingPage = ({ showAuth = false }) => {
               </a>
             </div>
 
-            <div className="mt-10 grid w-full max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3">
-              {metrics.map((metric) => (
-                <div
-                  key={metric.label}
-                  className="border border-gray-200 bg-white px-5 py-4 shadow-sm dark:border-gray-800 dark:bg-gray-900"
-                >
-                  <p className="text-3xl font-semibold text-gray-950 dark:text-white">
-                    {metric.value}
-                  </p>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    {metric.label}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-12 w-full max-w-6xl overflow-hidden border border-gray-200 bg-white text-left shadow-2xl dark:border-gray-800 dark:bg-gray-900">
-              <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-                <div>
-                  <p className="text-sm font-semibold text-gray-950 dark:text-white">
-                    Executive command center
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Projects, people, and activity in one operating view
-                  </p>
-                </div>
-                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200">
-                  Live
-                </span>
-              </div>
-
-              <div className="grid gap-0 lg:grid-cols-[260px_minmax(0,1fr)]">
-                <aside className="border-b border-gray-200 bg-gray-50 p-5 dark:border-gray-800 dark:bg-gray-950 lg:border-b-0 lg:border-r">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Workspace
-                  </p>
-                  <div className="mt-4 space-y-2">
-                    {["Overview", "Projects", "My Tasks", "Activity", "Team"].map(
-                      (item, index) => (
-                        <div
-                          key={item}
-                          className={`flex items-center justify-between px-3 py-2 text-sm ${
-                            index === 0
-                              ? "bg-indigo-600 text-white"
-                              : "text-gray-600 dark:text-gray-300"
-                          }`}
-                        >
-                          <span>{item}</span>
-                          {index === 0 && <FiActivity aria-hidden="true" />}
-                        </div>
-                      )
-                    )}
-                  </div>
-                </aside>
-
-                <div className="p-5">
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div className="border border-gray-200 p-4 dark:border-gray-800">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Projects
-                        </p>
-                        <FiLayers className="text-indigo-500" aria-hidden="true" />
-                      </div>
-                      <p className="mt-2 text-3xl font-semibold">18</p>
-                    </div>
-                    <div className="border border-gray-200 p-4 dark:border-gray-800">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Team members
-                        </p>
-                        <FiUsers className="text-emerald-500" aria-hidden="true" />
-                      </div>
-                      <p className="mt-2 text-3xl font-semibold">42</p>
-                    </div>
-                    <div className="border border-gray-200 p-4 dark:border-gray-800">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Overdue
-                        </p>
-                        <FiClock className="text-rose-500" aria-hidden="true" />
-                      </div>
-                      <p className="mt-2 text-3xl font-semibold">2</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 overflow-hidden border border-gray-200 dark:border-gray-800">
-                    <div className="grid grid-cols-[1.2fr_1.6fr_1fr_0.8fr] bg-gray-50 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-950 dark:text-gray-400">
-                      <span>Priority</span>
-                      <span>Workstream</span>
-                      <span>Status</span>
-                      <span>Due</span>
-                    </div>
-                    {activityRows.map(([priority, workstream, status, due]) => (
-                      <div
-                        key={workstream}
-                        className="grid grid-cols-[1.2fr_1.6fr_1fr_0.8fr] border-t border-gray-200 px-4 py-3 text-sm dark:border-gray-800"
-                      >
-                        <span className="font-medium text-gray-700 dark:text-gray-200">
-                          {priority}
-                        </span>
-                        <span className="text-gray-600 dark:text-gray-300">
-                          {workstream}
-                        </span>
-                        <span className="text-gray-600 dark:text-gray-300">
-                          {status}
-                        </span>
-                        <span className="text-gray-500 dark:text-gray-400">{due}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </section>
 
@@ -286,42 +157,6 @@ const LandingPage = ({ showAuth = false }) => {
               </p>
             </div>
             <FeatureSection />
-          </div>
-        </section>
-
-        <section
-          id="testimonials"
-          className="border-y border-gray-200 bg-white px-4 py-20 dark:border-gray-800 dark:bg-gray-950 sm:px-6"
-        >
-          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-600 dark:text-amber-300">
-                Executive proof
-              </p>
-              <h2 className="mt-3 text-3xl font-semibold text-gray-950 dark:text-white sm:text-4xl">
-                A cleaner operating rhythm for owners, managers, and teams.
-              </h2>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <blockquote className="border border-gray-200 bg-gray-50 p-6 dark:border-gray-800 dark:bg-gray-900">
-                <p className="text-lg font-medium leading-7 text-gray-900 dark:text-white">
-                  "I can see delayed work, responsible owners, and team activity
-                  before asking for an update."
-                </p>
-                <footer className="mt-5 text-sm text-gray-500 dark:text-gray-400">
-                  Operations Director, services business
-                </footer>
-              </blockquote>
-              <blockquote className="border border-gray-200 bg-gray-50 p-6 dark:border-gray-800 dark:bg-gray-900">
-                <p className="text-lg font-medium leading-7 text-gray-900 dark:text-white">
-                  "The role controls make it feel ready for a real company, not
-                  just a personal task app."
-                </p>
-                <footer className="mt-5 text-sm text-gray-500 dark:text-gray-400">
-                  Founder, multi-team startup
-                </footer>
-              </blockquote>
-            </div>
           </div>
         </section>
 
