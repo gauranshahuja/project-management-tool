@@ -2,83 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Smooth scroll behavior */
+/* Light theme: clean blue on white/grey, console style. */
+:root {
+  --surface: 255 255 255;
+  --surface-subtle: 248 249 250;
+  --surface-raised: 255 255 255;
+  --line: 232 234 237;
+  --line-strong: 218 220 224;
+  --ink: 32 33 36;
+  --ink-muted: 95 99 104;
+  --ink-subtle: 128 134 139;
+  --ink-inverted: 255 255 255;
+  --brand: 26 115 232;
+  --brand-hover: 24 90 188;
+  --brand-subtle: 232 240 254;
+  --success: 24 128 56;
+  --warning: 234 134 0;
+  --danger: 217 48 37;
+}
+
+/* Dark theme: near-black surfaces, softer ink. */
+.dark {
+  --surface: 17 17 17;
+  --surface-subtle: 10 10 10;
+  --surface-raised: 26 26 26;
+  --line: 42 42 42;
+  --line-strong: 58 58 58;
+  --ink: 232 234 237;
+  --ink-muted: 154 160 166;
+  --ink-subtle: 128 134 139;
+  --ink-inverted: 17 17 17;
+  --brand: 138 180 248;
+  --brand-hover: 174 203 250;
+  --brand-subtle: 30 39 56;
+  --success: 129 201 149;
+  --warning: 253 188 92;
+  --danger: 242 139 130;
+}
+
 html {
-  scroll-behavior: smooth;
+  background-color: rgb(var(--surface-subtle));
 }
 
-/* Floating blobs (animated background) */
-.blob {
-  position: absolute;
-  border-radius: 50%;
-  opacity: 0.6;
-  z-index: -1;
-  animation: blobAnimation 20s infinite ease-in-out;
-}
-
-@keyframes blobAnimation {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(30px, -50px) scale(1.1);
-  }
-  66% {
-    transform: translate(-20px, 20px) scale(0.9);
-  }
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-}
-
-/* Button ripple/pulse animation */
-.btn-pulse {
-  @apply relative overflow-hidden transition-transform duration-300 ease-in-out;
-}
-
-.btn-pulse::after {
-  content: '';
-  position: absolute;
-  width: 300%;
-  height: 300%;
-  top: 50%;
-  left: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  transform: translate(-50%, -50%) scale(0);
-  border-radius: 50%;
-  animation: ripple 0.6s linear;
-}
-
-@keyframes ripple {
-  to {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0;
-  }
-}
-
-/* Card hover tilt/scale effect */
-.card-hover {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-.card-hover:hover {
-  transform: scale(1.03);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-}
-
-/* Dark mode transition */
-html {
-  transition: background-color 0.5s ease, color 0.5s ease;
-}
-
-/* Input focus glowing animation */
-.input-glow:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
-  outline: none;
-  transition: box-shadow 0.2s ease;
-}
-
-/* Testimonial slider fade */
-.fade-slide {
-  transition: opacity 0.5s ease, transform 0.5s ease;
+body {
+  color: rgb(var(--ink));
+  background-color: rgb(var(--surface-subtle));
 }
