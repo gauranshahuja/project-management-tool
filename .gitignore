@@ -1,23 +1,20 @@
 node_modules/
-client/node_modules/
-server/node_modules/
-.env
-.env.local
-server/.env
-client/.env
+backend/node_modules/
+frontend/node_modules/
 dist/
 
-# Secrets / service-account keys — kabhi push na ho
+.env.local
+backend/.env.local
+frontend/.env.local
+
 *firebase-adminsdk*.json
 *serviceAccount*.json
 *.pem
 
-# AI collaboration / internal notes & tooling — kabhi push na ho
 API_CONTRACT.md
 *.ai.md
 .ai/
 AI_NOTES.md
 scripts/
 
-# Temp raw import of inventory-order-hub (reference only, not part of build)
 _order-hub-import/

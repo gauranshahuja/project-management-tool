@@ -73,14 +73,15 @@ A full-stack, multi-tenant platform where each company runs its projects, teams,
 | Database   | MongoDB (Atlas in production, in-memory server for local dev) |
 | Auth       | JWT, bcrypt, Firebase Auth (social login) |
 | Security   | helmet, express-rate-limit, role-based middleware |
-| Deployment | Firebase Hosting (client) · Node host (API) |
+| Realtime   | Socket.io (presence, notifications) · optional Redis adapter for scaling |
+| Deployment | Firebase Hosting (frontend) · Docker / Node host (backend) |
 
 ---
 
 ## Architecture
 
 ```
-client/                      server/
+frontend/                    backend/
 ├── pages/                   ├── models/        User, Organization, Invite,
 │   ├── LandingPage          │                  Project, Task
 │   ├── Dashboard            ├── controllers/   user, org, project, task
@@ -113,25 +114,27 @@ client/                      server/
 git clone <repo-url>
 cd project-management-tool
 
-cd server && npm install
-cd ../client && npm install
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
 ### 2. Configure environment
 
-`server/.env`:
+Each side ships a placeholder `.env` with safe defaults. For real secrets,
+create a `.env.local` next to it (gitignored) — it overrides `.env`.
+
+`backend/.env.local`:
 
 ```env
 MONGO_URI=<your MongoDB connection string>   # not needed for dev:memory
 JWT_SECRET=<a long random string>
 PORT=5000
+ALLOWED_ORIGINS=http://localhost:5173
+# REDIS_URL=redis://localhost:6379           # only for multi-instance scaling
 ```
 
-`client/.env` (optional — defaults to the Vite proxy):
-
-```env
-VITE_API_BASE_URL=/api
-```
+`frontend/.env` already points at the Vite proxy (`VITE_API_BASE_URL=/api`)
+and carries the public Firebase web config.
 
 ### 3. Run locally
 
@@ -139,18 +142,27 @@ VITE_API_BASE_URL=/api
 
 ```bash
 # Terminal 1 — API with in-memory MongoDB
-cd server
+cd backend
 npm run dev:memory
 
 # Terminal 2 — React client
-cd client
+cd frontend
 npm run dev
 ```
 
 Open http://localhost:5173, register with a company name, and explore.
 Note: in-memory data resets when the server restarts.
 
-**With a real MongoDB:** set `MONGO_URI` in `server/.env` and use `npm run dev` instead.
+**With a real MongoDB:** set `MONGO_URI` in `backend/.env.local` and use `npm run dev`.
+
+**With Docker (API + MongoDB + Redis in one command):**
+
+```bash
+docker compose up --build
+```
+
+This starts the API on http://localhost:5000 with a local MongoDB and Redis.
+Run the frontend separately with `cd frontend && npm run dev`.
 
 ---
 
@@ -168,6 +180,38 @@ All endpoints are prefixed with `/api`. Protected routes require
 
 Errors always return `{ "error": "<message>" }` with appropriate status codes
 (400 validation, 401 unauthenticated, 403 forbidden, 404 not found).
+
+---
+
+## Deployment
+
+The frontend and backend deploy independently.
+
+**Frontend → Firebase Hosting**
+
+```bash
+cd frontend
+npm run build
+firebase deploy --only hosting
+```
+
+**Backend → any Node host (Render, Railway, Fly.io, or your own server)**
+
+The backend is containerized, so it runs anywhere Docker does. On a platform
+like Render, point it at the `backend/` folder (it auto-detects the Dockerfile)
+and set these environment variables:
+
+| Variable | Notes |
+| -------- | ----- |
+| `MONGO_URI` | MongoDB Atlas connection string |
+| `JWT_SECRET` | long random string |
+| `ALLOWED_ORIGINS` | your deployed frontend URL(s), comma separated |
+| `APP_URL` | frontend URL used in email links |
+| `REDIS_URL` | only if running more than one instance |
+| `PORT` | usually provided by the host |
+
+After the API is live, set the frontend's `VITE_API_BASE_URL` to the API URL
+and add that frontend URL to `ALLOWED_ORIGINS` on the backend.
 
 ---
 
